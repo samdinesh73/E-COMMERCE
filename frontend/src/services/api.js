@@ -1,0 +1,62 @@
+import axios from "axios";
+import { API_BASE_URL, ENDPOINTS } from "../constants/config";
+
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Log requests for debugging route issues
+apiClient.interceptors.request.use((config) => {
+  try {
+    // eslint-disable-next-line no-console
+    console.debug("API Request:", config.method?.toUpperCase(), `${config.baseURL}${config.url}`);
+  } catch (e) {}
+  return config;
+});
+
+// Response interceptor for error handling
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error("API Error:", error.response?.data || error.message);
+    return Promise.reject(error);
+  }
+);
+
+export const productService = {
+  getAll: () => apiClient.get(ENDPOINTS.PRODUCTS),
+  getById: (id) => apiClient.get(`${ENDPOINTS.PRODUCTS}/${id}`),
+  create: (payload) => {
+    // If payload is FormData (for file upload), don't override Content-Type
+    if (payload instanceof FormData) {
+      return apiClient.post(ENDPOINTS.PRODUCTS, payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    }
+    // Otherwise, send as JSON
+    return apiClient.post(ENDPOINTS.PRODUCTS, payload);
+  },
+  update: (id, payload) => {
+    // If payload is FormData (for file upload), don't override Content-Type
+    if (payload instanceof FormData) {
+      return apiClient.put(`${ENDPOINTS.PRODUCTS}/${id}`, payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    }
+    // Otherwise, send as JSON
+    return apiClient.put(`${ENDPOINTS.PRODUCTS}/${id}`, payload);
+  },
+  remove: (id) => apiClient.delete(`${ENDPOINTS.PRODUCTS}/${id}`),
+};
+
+export const cartService = {
+  get: () => apiClient.get(ENDPOINTS.CART),
+  add: (product) => apiClient.post(ENDPOINTS.CART, product),
+  remove: (productId) => apiClient.delete(`${ENDPOINTS.CART}/${productId}`),
+};
+
+export default apiClient;

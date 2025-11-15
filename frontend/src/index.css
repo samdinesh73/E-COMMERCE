@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base layer styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-black;
+  }
+}
+
+/* Component layer styles */
+@layer components {
+  .btn-primary {
+    @apply px-6 py-2 bg-black text-white rounded-lg font-semibold hover:opacity-90 transition-opacity duration-200;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-2 bg-white text-black rounded-lg font-semibold border border-gray-300 hover:bg-gray-100 transition-colors duration-200;
+  }
+
+  .btn-outline {
+    @apply px-6 py-2 border-2 border-black text-black rounded-lg font-semibold hover:bg-gray-50 transition-colors duration-200;
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow-card hover:shadow-card-hover transition-all duration-200 border border-gray-100;
+  }
+
+  .container-app {
+    @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
+
+/* Utility layer animations */
+@layer utilities {
+  .animate-slide-down {
+    animation: slideDown 0.6s ease;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
