@@ -1,99 +1,117 @@
 const db = require("../config/database");
 
 // Get all products
-exports.getAllProducts = (req, res) => {
-  const query = "SELECT * FROM products";
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error("Database Error:", err);
-      return res.status(500).json({ error: "Database error" });
-    }
+exports.getAllProducts = async (req, res) => {
+  try {
+    const [results] = await db.execute("SELECT * FROM products");
     res.json(results);
-  });
+  } catch (err) {
+    console.error("Database Error:", err);
+    res.status(500).json({ error: "Database error" });
+  }
 };
 
 // Get product by ID
-exports.getProductById = (req, res) => {
-  const { id } = req.params;
-  const query = "SELECT * FROM products WHERE id = ?";
-  db.query(query, [id], (err, results) => {
-    if (err) {
-      console.error("Database Error:", err);
-      return res.status(500).json({ error: "Database error" });
-    }
+exports.getProductById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [results] = await db.execute("SELECT * FROM products WHERE id = ?", [id]);
     if (results.length === 0) {
       return res.status(404).json({ error: "Product not found" });
     }
     res.json(results[0]);
-  });
+  } catch (err) {
+    console.error("Database Error:", err);
+    res.status(500).json({ error: "Database error" });
+  }
 };
 
 // Create product (with optional file upload)
-exports.createProduct = (req, res) => {
-  const { name, price, description } = req.body;
-  let image = req.body.image || "default.png";
+exports.createProduct = async (req, res) => {
+  try {
+    const { name, price, description } = req.body;
+    let image = req.body.image || "default.png";
 
-  // If a file was uploaded, use the uploaded filename
-  if (req.file) {
-    image = `/uploads/${req.file.filename}`;
-  }
-
-  // Validation
-  if (!name || !price) {
-    return res.status(400).json({ error: "Name and price are required" });
-  }
-
-  const query = "INSERT INTO products (name, price, image, description) VALUES (?, ?, ?, ?)";
-  db.query(query, [name, Number(price), image, description || ""], (err, results) => {
-    if (err) {
-      console.error("Database Error:", err);
-      return res.status(500).json({ error: "Database error" });
+    // If a file was uploaded, use the uploaded filename
+    if (req.file) {
+      image = `/uploads/${req.file.filename}`;
     }
-    res.status(201).json({ id: results.insertId, name, price: Number(price), image, description });
-  });
+
+    // Validation
+    if (!name || !price) {
+      return res.status(400).json({ error: "Name and price are required" });
+    }
+
+    const [result] = await db.execute(
+      "INSERT INTO products (name, price, image, description) VALUES (?, ?, ?, ?)",
+      [name, Number(price), image, description || ""]
+    );
+    
+    res.status(201).json({ id: result.insertId, name, price: Number(price), image, description });
+  } catch (err) {
+    console.error("Database Error:", err);
+    res.status(500).json({ error: "Database error" });
+  }
 };
 
 // Update product by ID (with optional file upload)
-exports.updateProduct = (req, res) => {
-  const { id } = req.params;
-  const { name, price, description } = req.body;
-  let image = req.body.image;
+exports.updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, price, description } = req.body;
 
-  // If a file was uploaded, use the uploaded filename
-  if (req.file) {
-    image = `/uploads/${req.file.filename}`;
-  }
-
-  // Validation
-  if (!name || !price) {
-    return res.status(400).json({ error: "Name and price are required" });
-  }
-
-  const query = "UPDATE products SET name = ?, price = ?, image = ?, description = ? WHERE id = ?";
-  db.query(query, [name, Number(price), image, description || "", id], (err, results) => {
-    if (err) {
-      console.error("Database Error:", err);
-      return res.status(500).json({ error: "Database error" });
+    // Validation
+    if (!name || !price) {
+      return res.status(400).json({ error: "Name and price are required" });
     }
-    if (results.affectedRows === 0) {
-      return res.status(404).json({ error: "Product not found" });
+
+    // If a file was uploaded, update with new image; otherwise keep existing image
+    if (req.file) {
+      const image = `/uploads/${req.file.filename}`;
+      const [result] = await db.execute(
+        "UPDATE products SET name = ?, price = ?, image = ?, description = ? WHERE id = ?",
+        [name, Number(price), image, description || "", id]
+      );
+      
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      
+      res.json({ id: Number(id), name, price: Number(price), image, description });
+    } else {
+      // Update without changing image
+      const [result] = await db.execute(
+        "UPDATE products SET name = ?, price = ?, description = ? WHERE id = ?",
+        [name, Number(price), description || "", id]
+      );
+      
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      
+      // Fetch updated product to return current image
+      const [product] = await db.execute("SELECT * FROM products WHERE id = ?", [id]);
+      res.json(product[0]);
     }
-    res.json({ id: Number(id), name, price: Number(price), image, description });
-  });
+  } catch (err) {
+    console.error("Database Error:", err);
+    res.status(500).json({ error: "Database error" });
+  }
 };
 
 // Delete product by ID
-exports.deleteProduct = (req, res) => {
-  const { id } = req.params;
-  const query = "DELETE FROM products WHERE id = ?";
-  db.query(query, [id], (err, results) => {
-    if (err) {
-      console.error("Database Error:", err);
-      return res.status(500).json({ error: "Database error" });
-    }
-    if (results.affectedRows === 0) {
+exports.deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [result] = await db.execute("DELETE FROM products WHERE id = ?", [id]);
+    
+    if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Product not found" });
     }
+    
     res.json({ success: true, id: Number(id) });
-  });
+  } catch (err) {
+    console.error("Database Error:", err);
+    res.status(500).json({ error: "Database error" });
+  }
 };

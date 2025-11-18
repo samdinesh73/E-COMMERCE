@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import ProductCard from "../common/ProductCard";
+import { AlertCircle, Loader } from "lucide-react";
 
 export default function ProductList() {
   const [products, setProducts] = useState([]);
@@ -24,36 +25,39 @@ export default function ProductList() {
   }, []);
 
   return (
-    <section id="products" className="py-16 bg-white">
-      <div className="container-app">
-        <h2 className="text-4xl font-bold text-center mb-12">Featured Products</h2>
+    <section id="products" className="w-full">
+      {loading && (
+        <div className="flex flex-col items-center justify-center py-24">
+          <Loader className="h-10 w-10 text-blue-600 animate-spin mb-4" />
+          <p className="text-lg text-gray-600">Loading amazing products...</p>
+        </div>
+      )}
 
-        {loading && (
-          <div className="text-center py-12">
-            <p className="text-lg text-gray-600">Loading products...</p>
-          </div>
-        )}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
+          <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+          <p className="text-lg text-red-800 font-semibold">{error}</p>
+          <p className="text-sm text-red-600 mt-2">Please try refreshing the page</p>
+        </div>
+      )}
 
-        {error && (
-          <div className="text-center py-12">
-            <p className="text-lg text-red-600">{error}</p>
-          </div>
-        )}
+      {!loading && !error && products.length === 0 && (
+        <div className="text-center py-24">
+          <p className="text-lg text-gray-600 font-medium">No products available</p>
+          <p className="text-sm text-gray-500 mt-2">Check back soon for new items</p>
+        </div>
+      )}
 
-        {!loading && !error && products.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-lg text-gray-600">No products available</p>
-          </div>
-        )}
-
-        {!loading && !error && products.length > 0 && (
+      {!loading && !error && products.length > 0 && (
+        <div>
+          <p className="text-sm text-gray-600 mb-6 font-medium">Showing {products.length} products</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }

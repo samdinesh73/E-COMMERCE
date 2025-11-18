@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { productService } from "../../services/api";
+import { getImageUrl } from "../../utils/imageHelper";
 
 export default function EditProductForm({ product, onSaved, onCancel }) {
   const [form, setForm] = useState({ id: null, name: "", price: "", description: "" });
   const [imageFile, setImageFile] = useState(null);
+  const [currentImage, setCurrentImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
 
@@ -15,6 +17,7 @@ export default function EditProductForm({ product, onSaved, onCancel }) {
         price: product.price || "", 
         description: product.description || "" 
       });
+      setCurrentImage(product.image);
       setImageFile(null);
       setMsg(null);
     }
@@ -48,14 +51,25 @@ export default function EditProductForm({ product, onSaved, onCancel }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMsg(null);
+    
+    // Validate required fields
+    if (!form.name?.trim()) {
+      setMsg({ type: "error", text: "Product name is required" });
+      return;
+    }
+    if (!form.price || Number(form.price) <= 0) {
+      setMsg({ type: "error", text: "Price must be a positive number" });
+      return;
+    }
+
     try {
       setLoading(true);
 
       // Use FormData for multipart/form-data
       const formData = new FormData();
-      formData.append("name", form.name);
+      formData.append("name", form.name.trim());
       formData.append("price", Number(form.price));
-      formData.append("description", form.description || "");
+      formData.append("description", form.description?.trim() || "");
       
       // Append image file if selected (new image to upload)
       if (imageFile) {
@@ -63,11 +77,14 @@ export default function EditProductForm({ product, onSaved, onCancel }) {
       }
 
       const res = await productService.update(form.id, formData);
-      setMsg({ type: "success", text: "Product updated." });
-      onSaved && onSaved(res.data);
+      setMsg({ type: "success", text: "Product updated successfully!" });
+      setTimeout(() => {
+        onSaved && onSaved(res.data);
+      }, 500);
     } catch (err) {
-      console.error(err);
-      setMsg({ type: "error", text: err.response?.data?.error || "Update failed" });
+      console.error("Product Update Error:", err.response || err);
+      const errorMsg = err.response?.data?.error || err.message || "Update failed";
+      setMsg({ type: "error", text: errorMsg });
     } finally {
       setLoading(false);
     }
@@ -100,9 +117,23 @@ export default function EditProductForm({ product, onSaved, onCancel }) {
 
       <div className="mb-4">
         <label className="block text-sm font-medium mb-1">Change Image (Optional)</label>
+        <div className="mb-3">
+          <p className="text-xs text-gray-600 mb-2">Current Image:</p>
+          <img 
+            src={getImageUrl(currentImage)} 
+            alt={form.name}
+            className="w-full h-48 object-cover rounded border border-gray-300 bg-gray-100"
+            onError={(e) => e.target.src = "https://via.placeholder.com/400x300?text=No+Image"}
+          />
+        </div>
         <input type="file" accept="image/*" onChange={handleFileChange} className="w-full border border-gray-300 rounded px-3 py-2" />
         <p className="text-xs text-gray-500 mt-1">Leave empty to keep current image.</p>
-        {imageFile && <p className="text-xs text-green-600 mt-1">✓ New image: {imageFile.name}</p>}
+        {imageFile && (
+          <div className="mt-2">
+            <p className="text-xs text-green-600 font-semibold">✓ New image selected: {imageFile.name}</p>
+            <p className="text-xs text-gray-500">({(imageFile.size / 1024).toFixed(2)} KB)</p>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-3">

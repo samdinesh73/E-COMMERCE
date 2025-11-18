@@ -3,6 +3,7 @@ import { NAVIGATION_LINKS } from "../../constants/config";
 import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
+import { ShoppingCart, Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -11,85 +12,107 @@ export default function Navbar() {
   const totalItems = cart.getTotalItems();
 
   return (
-    <nav className="sticky top-0 z-50 bg-white text-black border-b border-gray-200">
-      <div className="container-app">
+    <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 backdrop-blur-sm bg-white/80">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center gap-2 text-2xl font-bold cursor-pointer">
+          <Link to="/" className="flex items-center gap-2 text-2xl font-bold text-black hover:text-gray-600 transition-colors">
             <span>🛍️</span>
-            <span>SellerRocket</span>
-          </div>
+            <span>ShopDB</span>
+          </Link>
 
           {/* Desktop Navigation */}
-          <ul className="hidden md:flex items-center gap-8">
-            {NAVIGATION_LINKS.map((link) => (
-              <li key={link.label}>
-                {link.href.startsWith("/") && !link.href.includes("#") ? (
-                  <Link to={link.href} className="hover:opacity-80 transition-opacity duration-300">{link.label}</Link>
-                ) : (
-                  <a href={link.href} className="hover:opacity-80 transition-opacity duration-300">{link.label}</a>
-                )}
-              </li>
-            ))}
-            <li>
-              <Link to="/admin" className="hover:opacity-80 transition-opacity duration-300">Admin</Link>
-            </li>
-          </ul>
+          <div className="hidden md:flex items-center gap-1">
+            <Link to="/" className="px-4 py-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
+              Home
+            </Link>
+            <Link to="/shop" className="px-4 py-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
+              Shop
+            </Link>
+            <Link to="/admin" className="px-4 py-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
+              Admin
+            </Link>
+          </div>
 
           {/* Right Section: Cart & Auth */}
           <div className="flex items-center gap-4">
             {/* Cart Button */}
-            <Link to="/cart" className="px-4 py-2 bg-white text-black border border-gray-300 rounded-full hover:bg-gray-100 transition-colors duration-200 flex items-center gap-2">
-              🛒 Cart ({totalItems})
+            <Link 
+              to="/cart" 
+              className="relative px-4 py-2 text-black border border-gray-300 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition-all flex items-center gap-2 group"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              <span className="hidden sm:inline">Cart</span>
+              {totalItems > 0 && (
+                <span className="ml-2 bg-black text-white text-xs font-bold px-2 py-0.5 rounded-full group-hover:bg-gray-800">
+                  {totalItems}
+                </span>
+              )}
             </Link>
 
             {/* Auth Links */}
             {user ? (
-              <Link to="/myaccount" className="px-4 py-2 bg-black text-white rounded-full hover:bg-gray-800 transition-colors duration-200">
+              <Link 
+                to="/myaccount" 
+                className="px-4 py-2 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors truncate max-w-[120px]"
+              >
                 {user.name}
               </Link>
             ) : (
-              <Link to="/login" className="px-4 py-2 bg-black text-white rounded-full hover:bg-gray-800 transition-colors duration-200">
+              <Link 
+                to="/login" 
+                className="px-4 py-2 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors"
+              >
                 Sign In
               </Link>
             )}
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden text-xl"
+              className="md:hidden p-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
               onClick={() => setIsOpen(!isOpen)}
             >
-              ☰
+              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
         </div>
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <ul className="md:hidden pb-4 flex flex-col gap-2">
-            {NAVIGATION_LINKS.map((link) => (
-              <li key={link.label}>
-                {link.href.startsWith("/") && !link.href.includes("#") ? (
-                  <Link to={link.href} onClick={() => setIsOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded transition-colors duration-200">{link.label}</Link>
-                ) : (
-                  <a href={link.href} onClick={() => setIsOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded transition-colors duration-200">{link.label}</a>
-                )}
-              </li>
-            ))}
-            <li>
-              <Link to="/admin" onClick={() => setIsOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded transition-colors duration-200">Admin</Link>
-            </li>
-            <li>
-              {user ? (
-                <Link to="/myaccount" onClick={() => setIsOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded transition-colors duration-200">My Account</Link>
-              ) : (
-                <Link to="/login" onClick={() => setIsOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded transition-colors duration-200">Sign In</Link>
-              )}
-            </li>
-          </ul>
+          <div className="md:hidden pb-4 space-y-2">
+            <Link 
+              to="/" 
+              onClick={() => setIsOpen(false)} 
+              className="block px-4 py-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Home
+            </Link>
+            <Link 
+              to="/shop" 
+              onClick={() => setIsOpen(false)} 
+              className="block px-4 py-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Shop
+            </Link>
+            <Link 
+              to="/admin" 
+              onClick={() => setIsOpen(false)} 
+              className="block px-4 py-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Admin
+            </Link>
+            {user && (
+              <Link 
+                to="/myaccount" 
+                onClick={() => setIsOpen(false)} 
+                className="block px-4 py-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                My Account
+              </Link>
+            )}
+          </div>
         )}
       </div>
     </nav>
   );
 }
-

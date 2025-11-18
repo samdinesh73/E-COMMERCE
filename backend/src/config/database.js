@@ -9,6 +9,9 @@ const db = mysql.createConnection({
   port: process.env.DB_PORT || 3306,
 });
 
+// Create a promise wrapper for async/await support
+const dbPromise = db.promise();
+
 db.connect((err) => {
   if (err) {
     console.error("❌ Database Connection Error:", err.message);
@@ -46,4 +49,5 @@ const ensureDescriptionColumn = () => {
 // Run this check after a short delay to allow schema availability on startup.
 setTimeout(ensureDescriptionColumn, 500);
 
-module.exports = db;
+// Export promise-based connection
+module.exports = dbPromise;

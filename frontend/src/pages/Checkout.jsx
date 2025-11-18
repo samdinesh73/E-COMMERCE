@@ -25,35 +25,46 @@ export default function Checkout() {
   const { user, token } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [method, setMethod] = useState("razorpay");
-  const [form, setForm] = useState({ name: "", phone: "", address: "", city: "", pincode: "" });
+  const [method, setMethod] = useState("cod");
+  const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", city: "", pincode: "" });
+  const [isGuest, setIsGuest] = useState(!token);
 
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
   const total = getTotalPrice();
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!token) {
-      navigate("/login");
-    }
-  }, [token]);
 
   const handleChange = (e) => setForm((s) => ({ ...s, [e.target.name]: e.target.value }));
 
   const saveOrder = async (paymentMethod) => {
     try {
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      
+      // Add auth header if user is logged in
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const resp = await fetch(`${API_URL}/orders`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify({
           total_price: total,
           shipping_address: form.address,
           city: form.city,
           pincode: form.pincode,
           payment_method: paymentMethod,
+          // For authenticated users
+          ...(token && {
+            full_name: form.name,
+            email: form.email,
+            phone: form.phone,
+          }),
+          // For guest users
+          ...(!token && {
+            guest_name: form.name,
+            guest_email: form.email,
+          }),
           items,
         }),
       });
@@ -83,24 +94,33 @@ export default function Checkout() {
   const handleRazorpay = async () => {
     setLoading(true);
     try {
-      // 1) Call backend to create Razorpay order
+      console.log('📋 Creating Razorpay order...');
       const resp = await fetch(`${API_URL}/payments/razorpay`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: Math.round(total * 100) }), // amount in paise
+        body: JSON.stringify({ amount: Math.round(total * 100) }),
       });
-      if (!resp.ok) throw new Error("Failed to create payment order");
+      
+      if (!resp.ok) {
+        const errorData = await resp.json();
+        throw new Error(errorData.error || `Server error: ${resp.status}`);
+      }
+
       const data = await resp.json();
+
+      if (!data.id) {
+        throw new Error("Invalid order data from server");
+      }
+
+      console.log(`✅ Order created: ${data.id}`);
 
       const loaded = await loadRazorpayScript();
       if (!loaded) {
-        alert("Unable to load Razorpay script. Please try again later.");
-        setLoading(false);
-        return;
+        throw new Error("Unable to load Razorpay script");
       }
 
       const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY || data.key || "",
+        key: process.env.REACT_APP_RAZORPAY_KEY || "",
         amount: data.amount,
         currency: data.currency || "INR",
         name: "ShopDB",
@@ -108,36 +128,63 @@ export default function Checkout() {
         order_id: data.id,
         handler: async function (response) {
           try {
-            // Save order after successful payment
+            console.log('💳 Payment received from Razorpay:', response.razorpay_payment_id);
+            
+            // Verify payment signature on backend
+            const verifyResp = await fetch(`${API_URL}/payments/razorpay/verify`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            if (!verifyResp.ok) {
+              throw new Error('Payment verification failed');
+            }
+
+            const verifyData = await verifyResp.json();
+            console.log('✅ Payment verified:', verifyData.payment_id);
+
+            // Save order after successful payment verification
             await saveOrder("razorpay");
             clearCart();
             alert("Payment successful! Order placed.");
             navigate("/myaccount");
           } catch (err) {
-            alert("Payment successful but failed to save order: " + err.message);
+            console.error('Payment handler error:', err);
+            alert("Payment processing error: " + err.message);
           }
         },
         prefill: {
           name: form.name,
           contact: form.phone,
+          email: form.email,
         },
         theme: { color: "#000000" },
+        modal: {
+          ondismiss: function() {
+            console.log('Payment modal closed');
+            setLoading(false);
+          }
+        }
       };
 
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (err) {
-      console.error(err);
+      console.error("Payment initialization error:", err);
       alert("Payment initialization failed: " + err.message);
-    } finally {
       setLoading(false);
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name || !form.phone || !form.address) {
-      alert("Please fill name, phone and address");
+    if (!form.name || !form.email || !form.phone || !form.address) {
+      alert("Please fill name, email, phone and address");
       return;
     }
 
@@ -147,10 +194,6 @@ export default function Checkout() {
       handleRazorpay();
     }
   };
-
-  if (!token) {
-    return null; // Redirect handled by useEffect
-  }
 
   return (
     <div className="container-app py-12">
@@ -163,10 +206,37 @@ export default function Checkout() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
+            {/* Guest / User Toggle */}
+            {!token && (
+              <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+                <label className="flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    checked={isGuest} 
+                    onChange={(e) => setIsGuest(e.target.checked)} 
+                  />
+                  <span className="text-sm font-medium">Continue as Guest</span>
+                </label>
+                <p className="text-xs text-gray-600 mt-2">
+                  {isGuest ? "No account needed" : "Sign in to track orders"}
+                </p>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Full Name</label>
                 <input name="name" value={form.name} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input 
+                  type="email" 
+                  name="email" 
+                  value={form.email || ""} 
+                  onChange={handleChange} 
+                  className="w-full border px-3 py-2 rounded" 
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Phone</label>

@@ -1,20 +1,198 @@
 import React from "react";
+import { Link } from "react-router-dom";
+import { Button } from "../ui/button";
+import { ShoppingCart, Zap, Shield, Truck } from "lucide-react";
 
 export default function HeroSection() {
   return (
-    <section className="relative bg-white text-black py-20">
-      {/* Content */}
-      <div className="container-app relative z-10 text-center">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 animate-slide-down">
-          Welcome to ShopDB
-        </h1>
-        <p className="text-lg md:text-xl mb-8 opacity-90 max-w-2xl mx-auto text-gray-700">
-          Discover premium products presented simply and clearly.
-        </p>
-        <button className="px-8 py-3 border border-black text-black font-bold rounded-full hover:bg-black hover:text-white transition-all duration-200">
-          Shop Now
-        </button>
+    <div className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-white text-black">
+      {/* Hero Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Left Content */}
+          <div className="space-y-8">
+            <div className="space-y-4">
+              <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
+                Experience Shopping
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
+                  Like Never Before
+                </span>
+              </h1>
+              <p className="text-lg text-gray-600 max-w-lg leading-relaxed">
+                Discover our curated collection of premium products with unbeatable prices. Shop with confidence and enjoy fast delivery.
+              </p>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-8">
+              <Link to="/shop">
+                <Button size="lg" className="w-full sm:w-auto text-base px-8">
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Start Shopping
+                </Button>
+              </Link>
+              <Link to="/shop">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="w-full sm:w-auto text-base px-8 border-gray-400 hover:bg-gray-100"
+                >
+                  Browse Catalog
+                </Button>
+              </Link>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-6 pt-8 border-t border-gray-300">
+              <div>
+                <p className="text-3xl font-bold text-black">10K+</p>
+                <p className="text-gray-600 text-sm">Products</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-black">50K+</p>
+                <p className="text-gray-600 text-sm">Happy Customers</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-black">24/7</p>
+                <p className="text-gray-600 text-sm">Support</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Visual */}
+          <div className="hidden lg:block">
+            <div className="relative">
+              {/* Gradient background shapes */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-200 to-transparent rounded-3xl opacity-20 blur-3xl"></div>
+              
+              {/* Product showcase box */}
+              <div className="relative bg-gradient-to-br from-white to-gray-50 border border-gray-300 rounded-3xl p-12 space-y-6">
+                <div className="space-y-4">
+                  <div className="h-64 bg-gradient-to-b from-blue-200 to-blue-100 rounded-xl flex items-center justify-center">
+                    <ShoppingCart className="h-24 w-24 text-blue-400" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-bold text-black">Premium Products</h3>
+                    <p className="text-gray-600">Handpicked items just for you</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </section>
+
+      {/* Features Section */}
+      <div className="bg-white border-t border-gray-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Feature 1 */}
+            <div className="group hover:bg-gray-50 p-6 rounded-xl transition-all duration-300 border border-transparent hover:border-gray-300">
+              <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-blue-100 mb-4 group-hover:bg-blue-200">
+                <Zap className="h-6 w-6 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2 text-black">Fast Checkout</h3>
+              <p className="text-gray-600 text-sm">
+                Complete your purchase in seconds with our streamlined checkout process.
+              </p>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="group hover:bg-gray-50 p-6 rounded-xl transition-all duration-300 border border-transparent hover:border-gray-300">
+              <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-blue-100 mb-4 group-hover:bg-blue-200">
+                <Shield className="h-6 w-6 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2 text-black">Secure Payment</h3>
+              <p className="text-gray-600 text-sm">
+                Your payment information is encrypted and secure with us.
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="group hover:bg-gray-50 p-6 rounded-xl transition-all duration-300 border border-transparent hover:border-gray-300">
+              <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-blue-100 mb-4 group-hover:bg-blue-200">
+                <Truck className="h-6 w-6 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2 text-black">Fast Shipping</h3>
+              <p className="text-gray-600 text-sm">
+                Get your orders delivered quickly to your doorstep.
+              </p>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="group hover:bg-gray-50 p-6 rounded-xl transition-all duration-300 border border-transparent hover:border-gray-300">
+              <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-blue-100 mb-4 group-hover:bg-blue-200">
+                <ShoppingCart className="h-6 w-6 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2 text-black">Easy Returns</h3>
+              <p className="text-gray-600 text-sm">
+                Not satisfied? Return items hassle-free within 30 days.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Featured Products Preview */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold mb-4 text-black">Trending Now</h2>
+          <p className="text-gray-600 text-lg">Check out our most popular items this season</p>
+        </div>
+
+        {/* Product Cards Placeholder */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((item) => (
+            <div
+              key={item}
+              className="group bg-white rounded-xl overflow-hidden border border-gray-300 hover:border-gray-400 transition-all duration-300 hover:shadow-lg"
+            >
+              <div className="relative h-64 bg-gradient-to-b from-blue-200 to-blue-100 flex items-center justify-center overflow-hidden">
+                <ShoppingCart className="h-20 w-20 text-blue-400 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <div className="p-4 space-y-3">
+                <h3 className="font-semibold text-black line-clamp-1">Premium Product {item}</h3>
+                <p className="text-gray-600 text-sm line-clamp-2">
+                  High-quality item with amazing features
+                </p>
+                <div className="flex items-center justify-between pt-2">
+                  <p className="text-xl font-bold text-black">₹4,999</p>
+                  <Button size="sm" className="px-3">
+                    Add
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* View All Button */}
+        <div className="text-center mt-12">
+          <Link to="/shop">
+            <Button size="lg" className="px-8">
+              View All Products
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Newsletter Section */}
+      <div className="border-t border-gray-300 bg-gradient-to-b from-white to-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+          <h2 className="text-3xl font-bold mb-4 text-black">Stay Updated</h2>
+          <p className="text-gray-600 mb-8">
+            Subscribe to get special offers and updates about new products
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="flex-1 px-4 py-3 rounded-lg bg-white border border-gray-300 text-black placeholder-gray-500 focus:outline-none focus:border-blue-500"
+            />
+            <Button>Subscribe</Button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

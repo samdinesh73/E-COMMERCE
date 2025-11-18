@@ -31,9 +31,7 @@ router.post("/signup", async (req, res) => {
     }
 
     // Check if user already exists
-    const existingRaw = await db.execute("SELECT id FROM users WHERE email = ?", [email]);
-    console.log("[auth] existingRaw:", existingRaw);
-    const existing = Array.isArray(existingRaw) ? existingRaw[0] : existingRaw;
+    const [existing] = await db.execute("SELECT id FROM users WHERE email = ?", [email]);
     console.log("[auth] existing users for email:", existing && existing.length ? existing.length : 0);
     if (existing && existing.length > 0) {
       return res.status(409).json({ error: "User with this email already exists" });
@@ -43,12 +41,10 @@ router.post("/signup", async (req, res) => {
     const password_hash = await bcrypt.hash(password, 10);
 
     // Insert new user
-    const insertRaw = await db.execute(
+    const [insertResult] = await db.execute(
       "INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)",
       [email, password_hash, name]
     );
-    console.log("[auth] insertRaw:", insertRaw);
-    const insertResult = Array.isArray(insertRaw) ? insertRaw[0] : insertRaw;
     console.log("[auth] insert result insertId:", insertResult && insertResult.insertId);
 
     // Generate JWT token
@@ -79,15 +75,13 @@ router.post("/signin", async (req, res) => {
     }
 
     // Find user by email
-    const usersRaw = await db.execute(
+    const [users] = await db.execute(
       "SELECT id, email, name, password_hash FROM users WHERE email = ?",
       [email]
     );
-    console.log("[auth] usersRaw:", usersRaw);
-    const users = Array.isArray(usersRaw) ? usersRaw[0] : usersRaw;
     console.log("[auth] users found:", users && users.length ? users.length : 0);
 
-    if (users.length === 0) {
+    if (!users || users.length === 0) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
@@ -95,6 +89,12 @@ router.post("/signin", async (req, res) => {
 
     // Debug: report that a user record was retrieved (without exposing password hash)
     console.log("[auth] user retrieved:", { id: user?.id, email: user?.email, hasPasswordHash: !!user?.password_hash });
+
+    // Safety check
+    if (!user || !user.password_hash) {
+      console.log("[auth] user missing or no password_hash");
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);

@@ -26,7 +26,27 @@ CREATE TABLE IF NOT EXISTS users (
 -- Create orders table
 CREATE TABLE IF NOT EXISTS orders (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT,
+  total_price DECIMAL(10, 2) NOT NULL,
+  shipping_address TEXT NOT NULL,
+  city VARCHAR(100),
+  pincode VARCHAR(20),
+  payment_method VARCHAR(50),
+  status VARCHAR(50) DEFAULT 'pending',
+  guest_name VARCHAR(255),
+  guest_email VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Create login_orders table for authenticated users
+CREATE TABLE IF NOT EXISTS login_orders (
+  id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
+  email VARCHAR(255),
+  phone VARCHAR(20),
+  full_name VARCHAR(255),
   total_price DECIMAL(10, 2) NOT NULL,
   shipping_address TEXT NOT NULL,
   city VARCHAR(100),
@@ -35,8 +55,11 @@ CREATE TABLE IF NOT EXISTS orders (
   status VARCHAR(50) DEFAULT 'pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- Set AUTO_INCREMENT to start from 1000 for login_orders
+ALTER TABLE login_orders AUTO_INCREMENT = 1000;
 
 -- Sample products (optional - comment out if you already have products)
 -- INSERT INTO products (name, price, image, description) VALUES
