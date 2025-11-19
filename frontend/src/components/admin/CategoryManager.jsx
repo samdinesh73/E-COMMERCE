@@ -3,6 +3,7 @@ import { categoryService } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { getBackendImageUrl } from "../../utils/imageHelper";
 import { Plus, Edit2, Trash2, Loader, X, ChevronRight } from "lucide-react";
+import { getImageUrl } from "../../utils/imageHelper";
 
 export default function CategoryManager() {
   const { token } = useAuth();
@@ -421,7 +422,7 @@ export default function CategoryManager() {
                     >
                       {product.image && (
                         <img
-                          src={`${process.env.REACT_APP_API_URL || "http://localhost:3001"}/uploads/${product.image}`}
+                          src={`${process.env.REACT_APP_API_URL || "http://localhost:3001"}/uploads/${getImageUrl(product.image)}`}
                           alt={product.name}
                           className="h-12 w-12 object-cover rounded"
                         />
@@ -466,7 +467,7 @@ export default function CategoryManager() {
                 <div>
                   {selectedProduct.image ? (
                     <img
-                      src={`${process.env.REACT_APP_API_URL || "http://localhost:3001"}/uploads/${selectedProduct.image}`}
+                      src={`${process.env.REACT_APP_API_URL || "http://localhost:3001"}/uploads/${getImageUrl(selectedProduct.image)}`}
                       alt={selectedProduct.name}
                       className="w-full h-64 object-cover rounded-lg border border-gray-200"
                     />
