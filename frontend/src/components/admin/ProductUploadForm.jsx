@@ -1,11 +1,30 @@
-import React, { useState } from "react";
-import { productService } from "../../services/api";
+import React, { useState, useEffect } from "react";
+import { productService, categoryService } from "../../services/api";
+import { Loader } from "lucide-react";
 
 export default function ProductUploadForm() {
-  const [form, setForm] = useState({ name: "", price: "", description: "" });
+  const [form, setForm] = useState({ name: "", price: "", description: "", category_id: "" });
+  const [categories, setCategories] = useState([]);
   const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [message, setMessage] = useState(null);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      const res = await categoryService.getAll();
+      setCategories(res.data.categories);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,6 +67,9 @@ export default function ProductUploadForm() {
       formData.append("name", form.name);
       formData.append("price", Number(form.price));
       formData.append("description", form.description || "");
+      if (form.category_id) {
+        formData.append("category_id", form.category_id);
+      }
       
       // Append image file if selected
       if (imageFile) {
@@ -57,7 +79,7 @@ export default function ProductUploadForm() {
       // Create product (productService.create will handle FormData)
       const res = await productService.create(formData);
       setMessage({ type: "success", text: "Product uploaded successfully." });
-      setForm({ name: "", price: "", description: "" });
+      setForm({ name: "", price: "", description: "", category_id: "" });
       setImageFile(null);
       // Reset file input
       e.target.reset();
@@ -88,6 +110,30 @@ export default function ProductUploadForm() {
       <div className="mb-4">
         <label className="block text-sm font-medium mb-1">Price (INR)</label>
         <input name="price" value={form.price} onChange={handleChange} type="number" step="0.01" className="w-full border border-gray-300 rounded px-3 py-2" />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-1">Category</label>
+        {categoriesLoading ? (
+          <div className="flex items-center gap-2 text-gray-600">
+            <Loader className="h-4 w-4 animate-spin" />
+            Loading categories...
+          </div>
+        ) : (
+          <select
+            name="category_id"
+            value={form.category_id}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded px-3 py-2"
+          >
+            <option value="">Select a category (optional)</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       <div className="mb-4">

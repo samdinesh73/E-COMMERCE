@@ -6,6 +6,7 @@ export const ENDPOINTS = {
   CART: "/cart",
   CHECKOUT: "/checkout",
   ORDERS: "/orders",
+  CATEGORIES: "/categories",
 };
 
 export const NAVIGATION_LINKS = [

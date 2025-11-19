@@ -174,7 +174,7 @@ export default function OrderDetail() {
                     <div>
                       <p className="text-xs text-gray-600 uppercase tracking-wide">Name</p>
                       <p className="text-gray-900 font-medium">
-                        {order.full_name || (order.user_id ? "Authenticated User" : "Guest Customer")}
+                        {order.full_name || order.guest_name || (order.user_id ? "Authenticated User" : "Guest Customer")}
                       </p>
                     </div>
                   </div>

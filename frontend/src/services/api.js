@@ -53,6 +53,45 @@ export const productService = {
   remove: (id) => apiClient.delete(`${ENDPOINTS.PRODUCTS}/${id}`),
 };
 
+export const categoryService = {
+  getAll: () => apiClient.get(ENDPOINTS.CATEGORIES),
+  getById: (id) => apiClient.get(`${ENDPOINTS.CATEGORIES}/${id}`),
+  getBySlug: (slug) => apiClient.get(`${ENDPOINTS.CATEGORIES}/slug/${slug}`),
+  create: (payload, token) => {
+    // If payload is FormData (for file upload), set multipart headers
+    if (payload instanceof FormData) {
+      return apiClient.post(ENDPOINTS.CATEGORIES, payload, {
+        headers: { 
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}` 
+        }
+      });
+    }
+    // Otherwise, send as JSON
+    return apiClient.post(ENDPOINTS.CATEGORIES, payload, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+  update: (id, payload, token) => {
+    // If payload is FormData (for file upload), set multipart headers
+    if (payload instanceof FormData) {
+      return apiClient.put(`${ENDPOINTS.CATEGORIES}/${id}`, payload, {
+        headers: { 
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}` 
+        }
+      });
+    }
+    // Otherwise, send as JSON
+    return apiClient.put(`${ENDPOINTS.CATEGORIES}/${id}`, payload, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+  remove: (id, token) => apiClient.delete(`${ENDPOINTS.CATEGORIES}/${id}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  }),
+};
+
 export const cartService = {
   get: () => apiClient.get(ENDPOINTS.CART),
   add: (product) => apiClient.post(ENDPOINTS.CART, product),

@@ -95,13 +95,34 @@ router.get("/", verifyToken, async (req, res) => {
 // Get all orders for admin (both login_orders and orders tables)
 router.get("/admin/all-orders", async (req, res) => {
   try {
-    // Fetch from both tables
+    const { fromDate, toDate } = req.query;
+    
+    // Build date filter if provided
+    let dateFilter = "";
+    let params = [];
+    
+    if (fromDate || toDate) {
+      if (fromDate && toDate) {
+        dateFilter = " WHERE DATE(created_at) BETWEEN ? AND ?";
+        params = [fromDate, toDate];
+      } else if (fromDate) {
+        dateFilter = " WHERE DATE(created_at) >= ?";
+        params = [fromDate];
+      } else if (toDate) {
+        dateFilter = " WHERE DATE(created_at) <= ?";
+        params = [toDate];
+      }
+    }
+
+    // Fetch from both tables with date filter
     const [loginOrders] = await db.execute(
-      "SELECT id, user_id, email, phone, full_name, total_price as total_amount, total_price as amount, shipping_address as address, city, pincode, payment_method, status, created_at FROM login_orders ORDER BY created_at DESC"
+      `SELECT id, user_id, email, phone, full_name, total_price as total_amount, total_price as amount, shipping_address as address, city, pincode, payment_method, status, created_at FROM login_orders${dateFilter} ORDER BY created_at DESC`,
+      params
     );
 
     const [guestOrders] = await db.execute(
-      "SELECT id, user_id, guest_email as email, NULL as phone, guest_name as full_name, total_price as total_amount, total_price as amount, shipping_address as address, city, pincode, payment_method, status, created_at FROM orders ORDER BY created_at DESC"
+      `SELECT id, user_id, guest_email as email, NULL as phone, guest_name as full_name, total_price as total_amount, total_price as amount, shipping_address as address, city, pincode, payment_method, status, created_at FROM orders${dateFilter} ORDER BY created_at DESC`,
+      params
     );
 
     // Combine and sort by date

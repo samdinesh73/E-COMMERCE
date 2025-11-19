@@ -1,13 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { productService } from "../../services/api";
+import { productService, categoryService } from "../../services/api";
 import { getImageUrl } from "../../utils/imageHelper";
+import { Loader } from "lucide-react";
 
 export default function EditProductForm({ product, onSaved, onCancel }) {
-  const [form, setForm] = useState({ id: null, name: "", price: "", description: "" });
+  const [form, setForm] = useState({ id: null, name: "", price: "", description: "", category_id: "" });
+  const [categories, setCategories] = useState([]);
   const [imageFile, setImageFile] = useState(null);
   const [currentImage, setCurrentImage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [msg, setMsg] = useState(null);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     if (product) {
@@ -15,13 +22,26 @@ export default function EditProductForm({ product, onSaved, onCancel }) {
         id: product.id, 
         name: product.name || "", 
         price: product.price || "", 
-        description: product.description || "" 
+        description: product.description || "",
+        category_id: product.category_id || ""
       });
       setCurrentImage(product.image);
       setImageFile(null);
       setMsg(null);
     }
   }, [product]);
+
+  const fetchCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      const res = await categoryService.getAll();
+      setCategories(res.data.categories);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
 
   if (!product) return <p className="text-gray-600">Select a product to edit from the list.</p>;
 
@@ -70,6 +90,9 @@ export default function EditProductForm({ product, onSaved, onCancel }) {
       formData.append("name", form.name.trim());
       formData.append("price", Number(form.price));
       formData.append("description", form.description?.trim() || "");
+      if (form.category_id) {
+        formData.append("category_id", form.category_id);
+      }
       
       // Append image file if selected (new image to upload)
       if (imageFile) {
@@ -108,6 +131,30 @@ export default function EditProductForm({ product, onSaved, onCancel }) {
       <div className="mb-4">
         <label className="block text-sm font-medium mb-1">Price (INR)</label>
         <input name="price" value={form.price} onChange={handleChange} type="number" step="0.01" className="w-full border border-gray-300 rounded px-3 py-2" />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-1">Category</label>
+        {categoriesLoading ? (
+          <div className="flex items-center gap-2 text-gray-600">
+            <Loader className="h-4 w-4 animate-spin" />
+            Loading categories...
+          </div>
+        ) : (
+          <select
+            name="category_id"
+            value={form.category_id}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded px-3 py-2"
+          >
+            <option value="">Select a category (optional)</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       <div className="mb-4">

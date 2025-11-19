@@ -50,8 +50,8 @@ export default function ProductList() {
 
       {!loading && !error && products.length > 0 && (
         <div>
-          <p className="text-sm text-gray-600 mb-6 font-medium">Showing {products.length} products</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6 font-medium">Showing {products.length} products</p>
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

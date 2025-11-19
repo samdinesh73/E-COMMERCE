@@ -6,6 +6,10 @@ const productRoutes = require("./routes/productRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const { router: authRoutes } = require("./routes/authRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const userRoutes = require("./routes/userRoutes");
+const cartRoutes = require("./routes/cartRoutes");
+const wishlistRoutes = require("./routes/wishlistRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -27,6 +31,10 @@ app.use("/products", productRoutes);
 app.use("/payments", paymentRoutes);
 app.use("/auth", authRoutes);
 app.use("/orders", orderRoutes);
+app.use("/users", userRoutes);
+app.use("/cart", cartRoutes);
+app.use("/wishlist", wishlistRoutes);
+app.use("/categories", categoryRoutes);
 
 // Health check
 app.get("/health", (req, res) => {

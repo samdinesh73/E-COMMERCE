@@ -40,23 +40,23 @@ router.post("/signup", async (req, res) => {
     // Hash password
     const password_hash = await bcrypt.hash(password, 10);
 
-    // Insert new user
+    // Insert new user with default 'customer' role
     const [insertResult] = await db.execute(
-      "INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)",
-      [email, password_hash, name]
+      "INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)",
+      [email, password_hash, name, 'customer']
     );
     console.log("[auth] insert result insertId:", insertResult && insertResult.insertId);
 
-    // Generate JWT token
+    // Generate JWT token with role
     const token = jwt.sign(
-      { id: insertResult.insertId, email, name },
+      { id: insertResult.insertId, email, name, role: 'customer' },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
 
     return res.status(201).json({
       token,
-      user: { id: insertResult.insertId, email, name },
+      user: { id: insertResult.insertId, email, name, role: 'customer' },
     });
   } catch (err) {
     console.error("Signup error:", err);
@@ -76,7 +76,7 @@ router.post("/signin", async (req, res) => {
 
     // Find user by email
     const [users] = await db.execute(
-      "SELECT id, email, name, password_hash FROM users WHERE email = ?",
+      "SELECT id, email, name, password_hash, role FROM users WHERE email = ?",
       [email]
     );
     console.log("[auth] users found:", users && users.length ? users.length : 0);
@@ -103,16 +103,16 @@ router.post("/signin", async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    // Generate JWT token
+    // Generate JWT token with role
     const token = jwt.sign(
-      { id: user.id, email: user.email, name: user.name },
+      { id: user.id, email: user.email, name: user.name, role: user.role || 'customer' },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
 
     return res.json({
       token,
-      user: { id: user.id, email: user.email, name: user.name },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role || 'customer' },
     });
   } catch (err) {
     console.error("Signin error:", err);
@@ -124,7 +124,7 @@ router.post("/signin", async (req, res) => {
 router.get("/me", verifyToken, async (req, res) => {
   try {
     const [users] = await db.execute(
-      "SELECT id, email, name FROM users WHERE id = ?",
+      "SELECT id, email, name, role FROM users WHERE id = ?",
       [req.user.id]
     );
 
@@ -132,7 +132,7 @@ router.get("/me", verifyToken, async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    return res.json({ user: users[0] });
+    return res.json({ user: { ...users[0], role: users[0].role || 'customer' } });
   } catch (err) {
     console.error("Me endpoint error:", err);
     return res.status(500).json({ error: "Failed to fetch user info" });

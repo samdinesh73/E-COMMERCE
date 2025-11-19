@@ -5,7 +5,9 @@ import ProductUploadForm from "../../components/admin/ProductUploadForm";
 import AdminProductList from "../../components/admin/AdminProductList";
 import EditProductForm from "../../components/admin/EditProductForm";
 import DeleteProductConfirm from "../../components/admin/DeleteProductConfirm";
-import { Plus, List, Edit2, Trash2, Package, Users, ShoppingCart, TrendingUp, Loader, AlertCircle } from "lucide-react";
+import UserList from "../../components/admin/UserList";
+import CategoryManager from "../../components/admin/CategoryManager";
+import { Plus, List, Edit2, Trash2, Package, Users, ShoppingCart, TrendingUp, Loader, AlertCircle, Tag } from "lucide-react";
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState("dashboard");
@@ -13,6 +15,8 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState(null);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalProducts: 0,
@@ -24,16 +28,22 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [productsRes, ordersRes] = await Promise.all([
+        const [productsRes, ordersRes, usersRes] = await Promise.all([
           axios.get("http://localhost:5000/products"),
-          axios.get("http://localhost:5000/orders").catch(() => ({ data: [] }))
+          axios.get("http://localhost:5000/orders/admin/all-orders").catch(() => ({ data: [] })),
+          axios.get("http://localhost:5000/users/admin/all-users").catch(() => ({ data: [] }))
         ]);
+
+        // Calculate revenue from orders
+        const totalRevenue = (ordersRes.data || []).reduce((sum, order) => {
+          return sum + parseFloat(order.total_amount || order.amount || 0);
+        }, 0);
 
         setStats({
           totalProducts: productsRes.data.length || 0,
           totalOrders: ordersRes.data.length || 0,
-          totalUsers: 0,
-          revenue: 0
+          totalUsers: usersRes.data.length || 0,
+          revenue: totalRevenue
         });
       } catch (err) {
         console.error("Error fetching stats:", err);
@@ -51,12 +61,20 @@ export default function AdminDashboard() {
     }
   }, [tab]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (from = fromDate, to = toDate) => {
     setOrdersLoading(true);
     setOrdersError(null);
     try {
-      // Fetch all orders from admin endpoint
-      const response = await axios.get("http://localhost:5000/orders/admin/all-orders");
+      // Build query string with optional date filters
+      let url = "http://localhost:5000/orders/admin/all-orders";
+      const params = new URLSearchParams();
+      if (from) params.append("fromDate", from);
+      if (to) params.append("toDate", to);
+      if (params.toString()) {
+        url += "?" + params.toString();
+      }
+
+      const response = await axios.get(url);
       setOrders(response.data || []);
     } catch (err) {
       console.error("Error fetching orders:", err);
@@ -70,7 +88,9 @@ export default function AdminDashboard() {
     { id: "dashboard", label: "Dashboard", icon: TrendingUp },
     { id: "create", label: "Create Product", icon: Plus },
     { id: "list", label: "All Products", icon: List },
+    { id: "categories", label: "Categories", icon: Tag },
     { id: "orders", label: "Orders", icon: ShoppingCart },
+    { id: "users", label: "Users", icon: Users },
     { id: "edit", label: "Edit Product", icon: Edit2 },
     { id: "delete", label: "Delete Product", icon: Trash2 }
   ];
@@ -214,9 +234,9 @@ export default function AdminDashboard() {
 
         {/* Other Tabs */}
         {tab !== "dashboard" && (
-          <div className={tab === "orders" ? "w-full" : "grid grid-cols-1 lg:grid-cols-3 gap-8"}>
+          <div className={(tab === "orders" || tab === "users" || tab === "categories") ? "w-full" : "grid grid-cols-1 lg:grid-cols-3 gap-8"}>
             {/* Main Content */}
-            <div className={tab === "orders" ? "w-full" : "lg:col-span-2"}>
+            <div className={(tab === "orders" || tab === "users" || tab === "categories") ? "w-full" : "lg:col-span-2"}>
               <div className="bg-white rounded-xl p-6 border border-gray-100">
                 {tab === "create" && <ProductUploadForm />}
                 {(tab === "list" || tab === "edit" || tab === "delete") && (
@@ -232,12 +252,60 @@ export default function AdminDashboard() {
                   />
                 )}
 
+                {/* Categories Tab */}
+                {tab === "categories" && <CategoryManager />}
+
+                {/* Users Tab */}
+                {tab === "users" && <UserList />}
+
                 {/* Orders Tab */}
                 {tab === "orders" && (
                   <div>
                     <div className="mb-6">
                       <h2 className="text-2xl font-bold text-gray-900 mb-2">All Orders</h2>
                       <p className="text-gray-600">Orders from authenticated and guest checkouts</p>
+                    </div>
+
+                    {/* Date Range Filter */}
+                    <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+                          <input
+                            type="date"
+                            value={fromDate}
+                            onChange={(e) => setFromDate(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+                          <input
+                            type="date"
+                            value={toDate}
+                            onChange={(e) => setToDate(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => fetchOrders(fromDate, toDate)}
+                            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                          >
+                            Filter
+                          </button>
+                          <button
+                            onClick={() => {
+                              setFromDate("");
+                              setToDate("");
+                              fetchOrders("", "");
+                            }}
+                            className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-medium"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
                     {ordersLoading && (
