@@ -24,17 +24,18 @@ export default function ProductCard({ product }) {
   };
 
   return (
-    <div className="group bg-white rounded-lg sm:rounded-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-all duration-500 h-full flex flex-col">
+    <div className="group bg-white rounded-lg sm:rounded-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col h-full">
       {/* Image Container */}
       <div
-        className="relative h-56 sm:h-64 lg:h-80 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 cursor-pointer"
+        className="relative w-full flex-shrink-0 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 cursor-pointer"
+        style={{ height: '280px' }}
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       >
         <Link  to={`/product/${product.id}`} className="block w-full h-full">
           <img
             src={imageUrl}
             alt={product.name}
-            className="w-full h-full object-cover  transition-transform duration-500"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             onError={(e) => {
               e.target.src = "assets/img/placeholder.png";
             }}

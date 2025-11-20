@@ -3,26 +3,71 @@ import axios from "axios";
 import ProductCard from "../common/ProductCard";
 import { AlertCircle, Loader } from "lucide-react";
 
-export default function ProductList() {
+export default function ProductList({
+  searchTerm = "",
+  selectedCategories = [],
+  priceRange = { min: 0, max: Infinity },
+}) {
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+  // Fetch all products
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/products");
+        setLoading(true);
+        const response = await axios.get(`${API_URL}/products`);
         setProducts(response.data);
-        setLoading(false);
+        setError(null);
       } catch (err) {
         console.error("Error fetching products:", err);
         setError("Failed to load products");
+      } finally {
         setLoading(false);
       }
     };
 
     fetchProducts();
   }, []);
+
+  // Apply filters
+  useEffect(() => {
+    let filtered = [...products];
+
+    // Filter by search term (name, description, category, price)
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      const searchNumber = parseFloat(searchTerm);
+      
+      filtered = filtered.filter(
+        (product) =>
+          product.name.toLowerCase().includes(term) ||
+          product.description?.toLowerCase().includes(term) ||
+          product.category_name?.toLowerCase().includes(term) ||
+          product.price.toString().includes(term) ||
+          (!isNaN(searchNumber) && product.price <= searchNumber) // Show prices up to search number
+      );
+    }
+
+    // Filter by multiple categories
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter((product) =>
+        selectedCategories.includes(product.category_id)
+      );
+    }
+
+    // Filter by price range
+    filtered = filtered.filter(
+      (product) =>
+        product.price >= priceRange.min && product.price <= priceRange.max
+    );
+
+    setFilteredProducts(filtered);
+  }, [products, searchTerm, selectedCategories, priceRange]);
 
   return (
     <section id="products" className="w-full">
@@ -41,18 +86,24 @@ export default function ProductList() {
         </div>
       )}
 
-      {!loading && !error && products.length === 0 && (
+      {!loading && !error && filteredProducts.length === 0 && (
         <div className="text-center py-24">
-          <p className="text-lg text-gray-600 font-medium">No products available</p>
-          <p className="text-sm text-gray-500 mt-2">Check back soon for new items</p>
+          <p className="text-lg text-gray-600 font-medium">No products found</p>
+          <p className="text-sm text-gray-500 mt-2">
+            {searchTerm || selectedCategories.length > 0 || priceRange.max !== Infinity
+              ? "Try adjusting your filters"
+              : "Check back soon for new items"}
+          </p>
         </div>
       )}
 
-      {!loading && !error && products.length > 0 && (
+      {!loading && !error && filteredProducts.length > 0 && (
         <div>
-          <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6 font-medium">Showing {products.length} products</p>
+          <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6 font-medium">
+            Showing {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}
+          </p>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

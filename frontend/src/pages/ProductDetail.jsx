@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { productService } from "../services/api";
 import { getImageUrl } from "../utils/imageHelper";
+import ProductImageGallery from "../components/common/ProductImageGallery";
 import { useCart } from "../context/CartContext";
 import { Heart, ShoppingCart, Truck, Shield, RotateCcw, Loader, AlertCircle } from "lucide-react";
 
@@ -86,19 +87,13 @@ export default function ProductDetail() {
       {/* Main Product Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12">
-          {/* Image Section */}
-          <div className="flex items-center justify-center">
-            <div className="w-full bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-8 border border-gray-100">
-              <div className="aspect-square flex items-center justify-center bg-gray-50 rounded-lg overflow-hidden">
-                <img
-                  src={imageUrl}
-                  alt={product.name}
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    e.target.src = "assets/img/placeholder.png";
-                  }}
-                />
-              </div>
+          {/* Image Section - Using Gallery Component */}
+          <div className="flex items-start justify-center">
+            <div className="w-full">
+              <ProductImageGallery
+                mainImage={product.image}
+                additionalImages={product.additional_images}
+              />
             </div>
           </div>
 

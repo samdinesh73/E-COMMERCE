@@ -51,6 +51,31 @@ export const productService = {
     return apiClient.put(`${ENDPOINTS.PRODUCTS}/${id}`, payload);
   },
   remove: (id) => apiClient.delete(`${ENDPOINTS.PRODUCTS}/${id}`),
+
+  // Product Images CRUD
+  images: {
+    getAll: (productId) => apiClient.get(`${ENDPOINTS.PRODUCTS}/${productId}/images`),
+    add: (productId, payload) => {
+      if (payload instanceof FormData) {
+        return apiClient.post(`${ENDPOINTS.PRODUCTS}/${productId}/images`, payload, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
+      return apiClient.post(`${ENDPOINTS.PRODUCTS}/${productId}/images`, payload);
+    },
+    update: (productId, imageId, payload) => 
+      apiClient.put(`${ENDPOINTS.PRODUCTS}/${productId}/images/${imageId}`, payload),
+    replace: (productId, imageId, payload) => {
+      if (payload instanceof FormData) {
+        return apiClient.put(`${ENDPOINTS.PRODUCTS}/${productId}/images/${imageId}/replace`, payload, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
+      return apiClient.put(`${ENDPOINTS.PRODUCTS}/${productId}/images/${imageId}/replace`, payload);
+    },
+    remove: (productId, imageId) => 
+      apiClient.delete(`${ENDPOINTS.PRODUCTS}/${productId}/images/${imageId}`),
+  },
 };
 
 export const categoryService = {

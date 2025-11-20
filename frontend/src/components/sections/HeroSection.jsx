@@ -69,7 +69,8 @@ export default function HeroSection() {
               <div className="relative bg-gradient-to-br from-white to-gray-50 border border-gray-300 rounded-3xl p-12 space-y-6">
                 <div className="space-y-4">
                   <div className="h-64 bg-gradient-to-b from-blue-200 to-blue-100 rounded-xl flex items-center justify-center">
-                    <ShoppingCart className="h-24 w-24 text-blue-400" />
+                    {/* <ShoppingCart className="h-24 w-24 text-blue-400" /> */}
+                    <img src="../assets/img/heroimage.jpg" alt="" />
                   </div>
                   <div className="space-y-2">
                     <h3 className="text-2xl font-bold text-black">Premium Products</h3>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { productService, categoryService } from "../../services/api";
 import { getImageUrl } from "../../utils/imageHelper";
+import ProductImageManager from "./ProductImageManager";
 import { Loader } from "lucide-react";
 
 export default function EditProductForm({ product, onSaved, onCancel }) {
@@ -182,6 +183,13 @@ export default function EditProductForm({ product, onSaved, onCancel }) {
           </div>
         )}
       </div>
+
+      {/* Product Images Manager */}
+      {form.id && (
+        <div className="mb-6" onClick={(e) => e.stopPropagation()}>
+          <ProductImageManager productId={form.id} />
+        </div>
+      )}
 
       <div className="flex items-center gap-3">
         <button type="submit" disabled={loading} className="px-4 py-2 bg-black text-white rounded">

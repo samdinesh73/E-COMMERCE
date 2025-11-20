@@ -46,8 +46,47 @@ const ensureDescriptionColumn = () => {
   });
 };
 
-// Run this check after a short delay to allow schema availability on startup.
+// Ensure product_images table exists for storing additional product images
+const ensureProductImagesTable = () => {
+  const checkTableSql = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'product_images'`;
+  db.query(checkTableSql, [dbName], (err, results) => {
+    if (err) {
+      console.error("Error checking product_images table:", err.message);
+      return;
+    }
+    if (results.length === 0) {
+      console.log("product_images table missing -> creating it...");
+      const createTableSql = `
+        CREATE TABLE product_images (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          product_id INT NOT NULL,
+          image_path VARCHAR(255) NOT NULL,
+          angle_description VARCHAR(255),
+          display_order INT DEFAULT 0,
+          is_primary BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+          INDEX idx_product_id (product_id),
+          INDEX idx_is_primary (is_primary),
+          INDEX idx_product_order (product_id, display_order)
+        )
+      `;
+      db.query(createTableSql, (createErr) => {
+        if (createErr) {
+          console.error("Failed to create product_images table:", createErr.message);
+        } else {
+          console.log("✅ Created product_images table successfully.");
+        }
+      });
+    } else {
+      console.log("✅ product_images table already exists.");
+    }
+  });
+};
+
+// Run checks after a short delay to allow schema availability on startup.
 setTimeout(ensureDescriptionColumn, 500);
+setTimeout(ensureProductImagesTable, 1000);
 
 // Export promise-based connection
 module.exports = dbPromise;

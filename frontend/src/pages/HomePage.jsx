@@ -5,6 +5,7 @@ import RecentProducts from "../components/sections/RecentProducts";
 import CtaSection from "../components/sections/CtaSection";
 import FeatureProduct from "../components/sections/FeatureProduct";
 import FeaturesSection from "../components/sections/FeaturesSection";
+import ProductSlider from "../components/sections/ProductSlider";
 
 export default function HomePage() {
   return (
@@ -12,6 +13,7 @@ export default function HomePage() {
       <HeroSection />
       <CategoriesSection />
       <FeaturesSection/>
+      <ProductSlider />
       <RecentProducts />
 
       <CtaSection/>
