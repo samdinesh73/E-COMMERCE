@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { ArrowLeft, Loader, AlertCircle, Save, Trash2, Calendar, User, Mail, Phone, MapPin, Package } from "lucide-react";
+import { API_BASE_URL } from "../../constants/config";
+import { ArrowLeft, Loader, AlertCircle, Save, Trash2, Calendar, User, Mail, Phone, MapPin, Package, ShoppingBag } from "lucide-react";
 
 export default function OrderDetail() {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editing, setEditing] = useState(false);
@@ -31,8 +33,9 @@ export default function OrderDetail() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`http://localhost:5000/orders/admin/order-detail/${orderId}`);
+      const response = await axios.get(`${API_BASE_URL}/orders/admin/order-detail/${orderId}`);
       setOrder(response.data.order);
+      setItems(response.data.items || []);
       setFormData({
         status: response.data.order.status || "pending",
         payment_method: response.data.order.payment_method || "",
@@ -54,7 +57,7 @@ export default function OrderDetail() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await axios.put(`http://localhost:5000/orders/admin/order/${orderId}`, formData);
+      await axios.put(`${API_BASE_URL}/orders/admin/order/${orderId}`, formData);
       setOrder({
         ...order,
         ...formData
@@ -71,7 +74,7 @@ export default function OrderDetail() {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`http://localhost:5000/orders/admin/order/${orderId}`);
+      await axios.delete(`${API_BASE_URL}/orders/admin/order/${orderId}`);
       alert("Order deleted successfully!");
       navigate("/admin");
     } catch (err) {
@@ -248,6 +251,47 @@ export default function OrderDetail() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Order Items Section */}
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5 text-blue-600" />
+                Order Items
+              </h2>
+              {items && items.length > 0 ? (
+                <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Product Name</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Product ID</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Quantity</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Price</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {items.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.product_name}</td>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.product_id}</td>
+                          <td className="px-4 py-3 text-sm text-gray-700">{item.quantity}</td>
+                          <td className="px-4 py-3 text-sm text-gray-700">₹{parseFloat(item.price).toFixed(2)}</td>
+                          <td className="px-4 py-3 text-sm font-semibold text-gray-900">
+                            ₹{(parseFloat(item.price) * item.quantity).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="bg-gray-50 p-6 rounded-lg text-center">
+                  <ShoppingBag className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-600 font-medium">No items in this order</p>
+                </div>
+              )}
             </div>
 
             {/* Edit Form Section */}

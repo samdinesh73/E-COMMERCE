@@ -38,8 +38,20 @@ router.post("/", optionalAuth, async (req, res) => {
         [user_id, email || null, phone || null, full_name || null, total_price, shipping_address, city, pincode, payment_method, "pending"]
       );
       
+      const orderId = result.insertId;
+
+      // Save order items
+      if (items && Array.isArray(items) && items.length > 0) {
+        for (const item of items) {
+          await db.execute(
+            "INSERT INTO order_items (order_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)",
+            [orderId, item.id || null, item.name, item.quantity, item.price]
+          );
+        }
+      }
+
       return res.status(201).json({
-        id: result.insertId,
+        id: orderId,
         user_id,
         email,
         phone,
@@ -58,8 +70,20 @@ router.post("/", optionalAuth, async (req, res) => {
         [user_id, total_price, shipping_address, city, pincode, payment_method, guest_name || null, guest_email || null, phone || null, "pending"]
       );
 
+      const orderId = result.insertId;
+
+      // Save order items for guest order
+      if (items && Array.isArray(items) && items.length > 0) {
+        for (const item of items) {
+          await db.execute(
+            "INSERT INTO guest_order_items (order_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)",
+            [orderId, item.id || null, item.name, item.quantity, item.price]
+          );
+        }
+      }
+
       return res.status(201).json({
-        id: result.insertId,
+        id: orderId,
         user_id,
         total_price,
         shipping_address,
@@ -198,7 +222,13 @@ router.get("/admin/order-detail/:id", async (req, res) => {
     );
 
     if (loginOrders && loginOrders.length > 0) {
-      return res.json({ order: loginOrders[0], table: "login_orders" });
+      // Fetch order items
+      const [items] = await db.execute(
+        "SELECT * FROM order_items WHERE order_id = ?",
+        [order_id]
+      );
+
+      return res.json({ order: loginOrders[0], items: items || [], table: "login_orders" });
     }
 
     // Try orders table
@@ -208,7 +238,13 @@ router.get("/admin/order-detail/:id", async (req, res) => {
     );
 
     if (guestOrders && guestOrders.length > 0) {
-      return res.json({ order: guestOrders[0], table: "orders" });
+      // Fetch order items from guest_order_items
+      const [items] = await db.execute(
+        "SELECT * FROM guest_order_items WHERE order_id = ?",
+        [order_id]
+      );
+
+      return res.json({ order: guestOrders[0], items: items || [], table: "orders" });
     }
 
     return res.status(404).json({ error: "Order not found" });
