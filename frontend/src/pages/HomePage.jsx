@@ -7,6 +7,7 @@ import FeatureProduct from "../components/sections/FeatureProduct";
 import FeaturesSection from "../components/sections/FeaturesSection";
 import ProductSlider from "../components/sections/ProductSlider";
 
+
 export default function HomePage() {
   return (
     <div className="bg-white min-h-screen">
@@ -18,6 +19,7 @@ export default function HomePage() {
 
       <CtaSection/>
       {/* <FeatureProduct/> */}
+      
     </div>
   );
 }

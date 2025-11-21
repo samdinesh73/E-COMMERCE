@@ -54,8 +54,8 @@ router.post("/", optionalAuth, async (req, res) => {
     } else {
       // Guest user - save to orders
       const [result] = await db.execute(
-        "INSERT INTO orders (user_id, total_price, shipping_address, city, pincode, payment_method, guest_name, guest_email, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [user_id, total_price, shipping_address, city, pincode, payment_method, guest_name || null, guest_email || null, "pending"]
+        "INSERT INTO orders (user_id, total_price, shipping_address, city, pincode, payment_method, guest_name, guest_email, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [user_id, total_price, shipping_address, city, pincode, payment_method, guest_name || null, guest_email || null, phone || null, "pending"]
       );
 
       return res.status(201).json({
@@ -121,7 +121,7 @@ router.get("/admin/all-orders", async (req, res) => {
     );
 
     const [guestOrders] = await db.execute(
-      `SELECT id, user_id, guest_email as email, NULL as phone, guest_name as full_name, total_price as total_amount, total_price as amount, shipping_address as address, city, pincode, payment_method, status, created_at FROM orders${dateFilter} ORDER BY created_at DESC`,
+      `SELECT id, user_id, guest_email as email, phone, guest_name as full_name, total_price as total_amount, total_price as amount, shipping_address as address, city, pincode, payment_method, status, created_at FROM orders${dateFilter} ORDER BY created_at DESC`,
       params
     );
 

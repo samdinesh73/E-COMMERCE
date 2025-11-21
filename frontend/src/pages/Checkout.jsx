@@ -64,6 +64,7 @@ export default function Checkout() {
           ...(!token && {
             guest_name: form.name,
             guest_email: form.email,
+            phone: form.phone,
           }),
           items,
         }),

@@ -84,9 +84,33 @@ const ensureProductImagesTable = () => {
   });
 };
 
+// Ensure phone column exists in orders table for guest checkout
+const ensurePhoneColumn = () => {
+  const checkSql = `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'phone'`;
+  db.query(checkSql, [dbName], (err, results) => {
+    if (err) {
+      console.error("Error checking phone column:", err.message);
+      return;
+    }
+    if (results.length === 0) {
+      console.log("'phone' column missing in orders table -> adding it...");
+      db.query("ALTER TABLE orders ADD COLUMN phone VARCHAR(20) AFTER guest_email", (alterErr) => {
+        if (alterErr) {
+          console.error("Failed to add 'phone' column:", alterErr.message);
+        } else {
+          console.log("✅ Added 'phone' column to orders table.");
+        }
+      });
+    } else {
+      console.log("✅ phone column already exists in orders table.");
+    }
+  });
+};
+
 // Run checks after a short delay to allow schema availability on startup.
 setTimeout(ensureDescriptionColumn, 500);
 setTimeout(ensureProductImagesTable, 1000);
+setTimeout(ensurePhoneColumn, 1500);
 
 // Export promise-based connection
 module.exports = dbPromise;
