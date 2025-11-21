@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { API_BASE_URL } from "../../constants/config";
 import ProductCard from "../common/ProductCard";
 import { AlertCircle, Loader } from "lucide-react";
 
@@ -13,14 +14,12 @@ export default function ProductList({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-
   // Fetch all products
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${API_URL}/products`);
+        const response = await axios.get(`${API_BASE_URL}/products`);
         setProducts(response.data);
         setError(null);
       } catch (err) {

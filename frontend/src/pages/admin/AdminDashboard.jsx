@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../../constants/config";
 import ProductUploadForm from "../../components/admin/ProductUploadForm";
 import AdminProductList from "../../components/admin/AdminProductList";
 import EditProductForm from "../../components/admin/EditProductForm";
@@ -29,9 +30,9 @@ export default function AdminDashboard() {
     const fetchStats = async () => {
       try {
         const [productsRes, ordersRes, usersRes] = await Promise.all([
-          axios.get("http://localhost:5000/products"),
-          axios.get("http://localhost:5000/orders/admin/all-orders").catch(() => ({ data: [] })),
-          axios.get("http://localhost:5000/users/admin/all-users").catch(() => ({ data: [] }))
+          axios.get(`${API_BASE_URL}/products`),
+          axios.get(`${API_BASE_URL}/orders/admin/all-orders`).catch(() => ({ data: [] })),
+          axios.get(`${API_BASE_URL}/users/admin/all-users`).catch(() => ({ data: [] }))
         ]);
 
         // Calculate revenue from orders
@@ -66,7 +67,7 @@ export default function AdminDashboard() {
     setOrdersError(null);
     try {
       // Build query string with optional date filters
-      let url = "http://localhost:5000/orders/admin/all-orders";
+      let url = `${API_BASE_URL}/orders/admin/all-orders`;
       const params = new URLSearchParams();
       if (from) params.append("fromDate", from);
       if (to) params.append("toDate", to);

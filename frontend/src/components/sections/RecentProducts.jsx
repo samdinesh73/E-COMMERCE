@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Loader, AlertCircle, ArrowRight } from "lucide-react";
+import { API_BASE_URL } from "../../constants/config";
 import ProductCard from "../common/ProductCard";
 
 export default function RecentProducts() {
@@ -18,7 +19,7 @@ export default function RecentProducts() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get("http://localhost:5000/products");
+      const response = await axios.get(`${API_BASE_URL}/products`);
       // Get last 6 products (most recent)
       const recentProducts = response.data.slice(-6).reverse();
       setProducts(recentProducts);

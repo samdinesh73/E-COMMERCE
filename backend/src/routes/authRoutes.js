@@ -4,7 +4,10 @@ const jwt = require("jsonwebtoken");
 const db = require("../config/database");
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-prod";
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  console.warn("⚠️  WARNING: JWT_SECRET not set in environment variables!");
+  return "your-secret-key-change-in-prod";
+})();
 
 // Middleware to verify JWT token
 const verifyToken = (req, res, next) => {

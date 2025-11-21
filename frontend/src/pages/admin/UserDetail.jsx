@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../../constants/config";
 import { Loader, AlertCircle, ArrowLeft, Mail, Phone, MapPin, Calendar, ShoppingCart, TrendingUp } from "lucide-react";
 
 export default function UserDetail() {
@@ -18,7 +19,7 @@ export default function UserDetail() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`http://localhost:5000/users/admin/user-detail/${userId}`);
+      const response = await axios.get(`${API_BASE_URL}/users/admin/user-detail/${userId}`);
       setUserDetail(response.data);
     } catch (err) {
       console.error("Error fetching user detail:", err);

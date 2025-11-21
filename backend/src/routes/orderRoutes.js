@@ -10,7 +10,10 @@ const optionalAuth = (req, res, next) => {
   if (token) {
     try {
       const jwt = require("jsonwebtoken");
-      const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-prod";
+      const JWT_SECRET = process.env.JWT_SECRET || (() => {
+        console.warn("⚠️  WARNING: JWT_SECRET not set in environment variables!");
+        return "your-secret-key-change-in-prod";
+      })();
       const decoded = jwt.verify(token, JWT_SECRET);
       req.user = decoded;
     } catch (err) {

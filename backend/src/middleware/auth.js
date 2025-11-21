@@ -8,7 +8,11 @@ const authenticate = (req, res, next) => {
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
+    const JWT_SECRET = process.env.JWT_SECRET || (() => {
+      console.warn("⚠️  WARNING: JWT_SECRET not set in environment variables!");
+      return "your-secret-key";
+    })();
+    const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     next();
   } catch (err) {

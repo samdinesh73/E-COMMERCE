@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../../constants/config";
 import { Loader, AlertCircle, Users as UsersIcon, Mail, Calendar, TrendingUp, ShoppingCart } from "lucide-react";
 
 export default function UserList() {
@@ -19,7 +20,7 @@ export default function UserList() {
     setLoading(true);
     setError(null);
     try {
-      let url = "http://localhost:5000/users/admin/all-users";
+      let url = `${API_BASE_URL}/users/admin/all-users`;
       const params = new URLSearchParams();
       if (from) params.append("fromDate", from);
       if (to) params.append("toDate", to);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { ChevronLeft, ChevronRight, Loader } from "lucide-react";
+import { API_BASE_URL } from "../../constants/config";
 import ProductCard from "../common/ProductCard";
 
 export default function ProductSlider() {
@@ -10,8 +11,6 @@ export default function ProductSlider() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(4);
   const [isAutoPlay, setIsAutoPlay] = useState(true);
-
-  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
   // Detect screen size
   useEffect(() => {
@@ -34,7 +33,7 @@ export default function ProductSlider() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/products`);
+      const response = await axios.get(`${API_BASE_URL}/products`);
       setProducts(response.data || []);
       setError(null);
     } catch (err) {
