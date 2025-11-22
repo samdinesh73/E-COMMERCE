@@ -80,13 +80,16 @@ export default function Checkout() {
   const handleCOD = async () => {
     setLoading(true);
     try {
-      await saveOrder("cod");
+      const orderData = await saveOrder("cod");
       clearCart();
-      alert("Order placed successfully with Cash on Delivery!");
-      navigate("/myaccount");
+      navigate("/thank-you", {
+        state: {
+          order: orderData,
+          items: items,
+        },
+      });
     } catch (err) {
       alert("Failed to place COD order: " + err.message);
-    } finally {
       setLoading(false);
     }
   };
@@ -149,10 +152,14 @@ export default function Checkout() {
             console.log('✅ Payment verified:', verifyData.payment_id);
 
             // Save order after successful payment verification
-            await saveOrder("razorpay");
+            const orderData = await saveOrder("razorpay");
             clearCart();
-            alert("Payment successful! Order placed.");
-            navigate("/myaccount");
+            navigate("/thank-you", {
+              state: {
+                order: orderData,
+                items: items,
+              },
+            });
           } catch (err) {
             console.error('Payment handler error:', err);
             alert("Payment processing error: " + err.message);

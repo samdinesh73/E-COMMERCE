@@ -8,6 +8,7 @@ import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
+import ThankYou from "./pages/ThankYou";
 import LoginSignup from "./pages/LoginSignup";
 import MyAccount from "./pages/MyAccount";
 import Wishlist from "./pages/Wishlist";
@@ -61,6 +62,7 @@ function App() {
                     }
                   />
                   <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/thank-you" element={<ThankYou />} />
                   <Route path="/login" element={<LoginSignup />} />
                   <Route path="/myaccount" element={<MyAccount />} />
                 </Routes>
