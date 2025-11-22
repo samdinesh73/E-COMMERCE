@@ -1,17 +1,45 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getImageUrl } from "../../utils/imageHelper";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { ShoppingCart, Heart, Star, Zap } from "lucide-react";
+import { API_BASE_URL, ENDPOINTS } from "../../constants/config";
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const isFavorite = isInWishlist(product.id);
+  const [secondaryImage, setSecondaryImage] = useState(null);
+  const [showSecondary, setShowSecondary] = useState(false);
+
+  // Fetch additional images on component mount
+  useEffect(() => {
+    const fetchAdditionalImages = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${product.id}/images`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`Fetched images for product ${product.id}:`, data);
+          // Handle both direct array and nested images object
+          const images = Array.isArray(data) ? data : (data.images || []);
+          console.log(`Processed images:`, images);
+          if (images.length > 0) {
+            setSecondaryImage(images[0]);
+            console.log(`Set secondary image:`, images[0]);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching product images:", err);
+      }
+    };
+
+    fetchAdditionalImages();
+  }, [product.id]);
 
   // Handle image path - support both uploaded images (/uploads/...) and static paths (assets/img/...)
   const imageUrl = getImageUrl(product.image);
+  const secondaryImageUrl = secondaryImage ? getImageUrl(secondaryImage.image_path) : null;
 
   const handleWishlistToggle = (e) => {
     e.preventDefault();
@@ -30,16 +58,35 @@ export default function ProductCard({ product }) {
         className="relative w-full flex-shrink-0 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 cursor-pointer"
         style={{ height: '280px' }}
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onMouseEnter={() => setShowSecondary(true)}
+        onMouseLeave={() => setShowSecondary(false)}
       >
-        <Link  to={`/product/${product.id}`} className="block w-full h-full">
+        <Link to={`/product/${product.id}`} className="block w-full h-full relative">
+          {/* Primary Image */}
           <img
             src={imageUrl}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            className={`w-full h-full object-cover transition-all duration-500  ${
+              showSecondary ? "opacity-0" : "opacity-100"
+            }`}
             onError={(e) => {
               e.target.src = "assets/img/placeholder.png";
             }}
           />
+
+          {/* Secondary Image - Shows on hover with animation */}
+          {secondaryImageUrl && (
+            <img
+              src={secondaryImageUrl}
+              alt={`${product.name} - alternate view`}
+              className={`absolute inset-0 w-full h-full object-cover transition-all duration-500  ${
+                showSecondary ? "opacity-100" : "opacity-0"
+              }`}
+              onError={(e) => {
+                e.target.src = "assets/img/placeholder.png";
+              }}
+            />
+          )}
         </Link>
 
         {/* Badge */}
