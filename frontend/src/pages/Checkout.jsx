@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { getImageUrl } from "../utils/imageHelper";
+import { API_BASE_URL, ENDPOINTS } from "../constants/config";
 
 // Simple helper to load Razorpay script
 const loadRazorpayScript = () => {
@@ -28,8 +29,6 @@ export default function Checkout() {
   const [method, setMethod] = useState("cod");
   const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", city: "", pincode: "" });
   const [isGuest, setIsGuest] = useState(!token);
-
-  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
   const total = getTotalPrice();
 
   const handleChange = (e) => setForm((s) => ({ ...s, [e.target.name]: e.target.value }));
@@ -45,7 +44,7 @@ export default function Checkout() {
         headers.Authorization = `Bearer ${token}`;
       }
 
-      const resp = await fetch(`${API_URL}/orders`, {
+      const resp = await fetch(`${API_BASE_URL}${ENDPOINTS.ORDERS}`, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -96,7 +95,7 @@ export default function Checkout() {
     setLoading(true);
     try {
       console.log('📋 Creating Razorpay order...');
-      const resp = await fetch(`${API_URL}/payments/razorpay`, {
+      const resp = await fetch(`${API_BASE_URL}${ENDPOINTS.PAYMENTS_RAZORPAY}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount: Math.round(total * 100) }),
@@ -132,7 +131,7 @@ export default function Checkout() {
             console.log('💳 Payment received from Razorpay:', response.razorpay_payment_id);
             
             // Verify payment signature on backend
-            const verifyResp = await fetch(`${API_URL}/payments/razorpay/verify`, {
+            const verifyResp = await fetch(`${API_BASE_URL}${ENDPOINTS.PAYMENTS_RAZORPAY_VERIFY}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({

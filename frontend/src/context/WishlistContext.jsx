@@ -1,10 +1,9 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import axios from "axios";
+import { API_BASE_URL, ENDPOINTS } from "../constants/config";
 
 const WishlistContext = createContext();
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 export const WishlistProvider = ({ children }) => {
   const { user, token } = useAuth();
@@ -38,7 +37,7 @@ export const WishlistProvider = ({ children }) => {
   const fetchWishlistFromBackend = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/wishlist`, {
+      const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.WISHLIST}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const wishlistItems = response.data.items.map((item) => ({
@@ -70,7 +69,7 @@ export const WishlistProvider = ({ children }) => {
     if (user && token) {
       try {
         await axios.post(
-          `${API_BASE_URL}/wishlist`,
+          `${API_BASE_URL}${ENDPOINTS.WISHLIST}`,
           { product_id: product.id },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -86,7 +85,7 @@ export const WishlistProvider = ({ children }) => {
     // Sync with backend if user is logged in
     if (user && token) {
       try {
-        await axios.delete(`${API_BASE_URL}/wishlist/${productId}`, {
+        await axios.delete(`${API_BASE_URL}${ENDPOINTS.WISHLIST}/${productId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
       } catch (err) {
@@ -106,7 +105,7 @@ export const WishlistProvider = ({ children }) => {
     if (user && token) {
       try {
         for (const item of wishlist) {
-          await axios.delete(`${API_BASE_URL}/wishlist/${item.id}`, {
+          await axios.delete(`${API_BASE_URL}${ENDPOINTS.WISHLIST}/${item.id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
         }

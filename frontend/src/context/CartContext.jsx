@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
 import axios from "axios";
+import { API_BASE_URL, ENDPOINTS } from "../constants/config";
 
 const CartContext = createContext(null);
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 export const CartProvider = ({ children }) => {
   const { user, token } = useAuth();
@@ -35,7 +34,7 @@ export const CartProvider = ({ children }) => {
   const fetchCartFromBackend = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/cart`, {
+      const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.CART}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const cartItems = response.data.items.map((item) => ({
@@ -69,7 +68,7 @@ export const CartProvider = ({ children }) => {
     if (user && token) {
       try {
         await axios.post(
-          `${API_BASE_URL}/cart`,
+          `${API_BASE_URL}${ENDPOINTS.CART}`,
           {
             product_id: product.id,
             quantity,
@@ -89,7 +88,7 @@ export const CartProvider = ({ children }) => {
     // Sync with backend if user is logged in
     if (user && token) {
       try {
-        await axios.delete(`${API_BASE_URL}/cart/${productId}`, {
+        await axios.delete(`${API_BASE_URL}${ENDPOINTS.CART}/${productId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
       } catch (err) {
@@ -107,7 +106,7 @@ export const CartProvider = ({ children }) => {
     if (user && token) {
       try {
         await axios.put(
-          `${API_BASE_URL}/cart/${productId}`,
+          `${API_BASE_URL}${ENDPOINTS.CART}/${productId}`,
           { quantity },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -123,7 +122,7 @@ export const CartProvider = ({ children }) => {
     // Sync with backend if user is logged in
     if (user && token) {
       try {
-        await axios.delete(`${API_BASE_URL}/cart`, {
+        await axios.delete(`${API_BASE_URL}${ENDPOINTS.CART}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
       } catch (err) {

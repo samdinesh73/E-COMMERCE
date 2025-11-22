@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { API_BASE_URL, ENDPOINTS } from "../constants/config";
 
 export default function MyAccount() {
   const { user, token, logout } = useAuth();
@@ -8,8 +9,6 @@ export default function MyAccount() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
   useEffect(() => {
     if (!token) {
@@ -22,7 +21,7 @@ export default function MyAccount() {
 
   const fetchOrders = async () => {
     try {
-      const resp = await fetch(`${API_URL}/orders`, {
+      const resp = await fetch(`${API_BASE_URL}${ENDPOINTS.ORDERS}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

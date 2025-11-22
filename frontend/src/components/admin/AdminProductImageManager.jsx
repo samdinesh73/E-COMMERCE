@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { productService } from "../../services/api";
 import { getImageUrl } from "../../utils/imageHelper";
+import { API_BASE_URL, ENDPOINTS } from "../../constants/config";
 import { Upload, Trash2, Edit2, Loader, AlertCircle, X, Check, ChevronUp, ChevronDown } from "lucide-react";
 
 export default function AdminProductImageManager({ productId }) {
@@ -53,7 +54,7 @@ export default function AdminProductImageManager({ productId }) {
       formData.append("display_order", images.length);
 
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/products/${productId}/images`,
+        `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${productId}/images`,
         {
           method: "POST",
           body: formData,
@@ -90,7 +91,7 @@ export default function AdminProductImageManager({ productId }) {
   const handleUpdateImage = async (imageId) => {
     try {
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/products/${productId}/images/${imageId}`,
+        `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${productId}/images/${imageId}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -119,7 +120,7 @@ export default function AdminProductImageManager({ productId }) {
 
     try {
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/products/${productId}/images/${imageId}`,
+        `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${productId}/images/${imageId}`,
         { method: "DELETE" }
       );
 
@@ -146,7 +147,7 @@ export default function AdminProductImageManager({ productId }) {
     try {
       await Promise.all([
         fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/products/${productId}/images/${newImages[index].id}`,
+          `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${productId}/images/${newImages[index].id}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -154,7 +155,7 @@ export default function AdminProductImageManager({ productId }) {
           }
         ),
         fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/products/${productId}/images/${newImages[index - 1].id}`,
+          `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${productId}/images/${newImages[index - 1].id}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -182,7 +183,7 @@ export default function AdminProductImageManager({ productId }) {
     try {
       await Promise.all([
         fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/products/${productId}/images/${newImages[index].id}`,
+          `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${productId}/images/${newImages[index].id}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -190,7 +191,7 @@ export default function AdminProductImageManager({ productId }) {
           }
         ),
         fetch(
-          `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/products/${productId}/images/${newImages[index + 1].id}`,
+          `${API_BASE_URL}${ENDPOINTS.PRODUCTS}/${productId}/images/${newImages[index + 1].id}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },

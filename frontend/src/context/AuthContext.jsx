@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { API_BASE_URL, ENDPOINTS } from "../constants/config";
 
 const AuthContext = createContext(null);
 
@@ -13,8 +14,6 @@ export const AuthProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(true);
 
-  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-
   // Verify token on mount
   useEffect(() => {
     if (token) {
@@ -26,7 +25,7 @@ export const AuthProvider = ({ children }) => {
 
   const verifyToken = async (tok) => {
     try {
-      const resp = await fetch(`${API_URL}/auth/me`, {
+      const resp = await fetch(`${API_BASE_URL}${ENDPOINTS.AUTH_ME}`, {
         headers: { Authorization: `Bearer ${tok}` },
       });
       if (resp.ok) {
@@ -45,7 +44,7 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (email, password, name) => {
     try {
-      const resp = await fetch(`${API_URL}/auth/signup`, {
+      const resp = await fetch(`${API_BASE_URL}${ENDPOINTS.AUTH_SIGNUP}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, name }),
@@ -68,7 +67,7 @@ export const AuthProvider = ({ children }) => {
 
   const signin = async (email, password) => {
     try {
-      const resp = await fetch(`${API_URL}/auth/signin`, {
+      const resp = await fetch(`${API_BASE_URL}${ENDPOINTS.AUTH_SIGNIN}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

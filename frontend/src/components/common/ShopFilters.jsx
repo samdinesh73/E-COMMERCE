@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown, X } from "lucide-react";
+import { API_BASE_URL, ENDPOINTS } from "../../constants/config";
 
 export default function ShopFilters({
   onFilterChange,
@@ -17,8 +18,6 @@ export default function ShopFilters({
     price: true,
   });
 
-  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-
   // Fetch categories
   useEffect(() => {
     fetchCategories();
@@ -27,7 +26,7 @@ export default function ShopFilters({
   const fetchCategories = async () => {
     try {
       setCategoriesLoading(true);
-      const response = await fetch(`${API_URL}/categories`);
+      const response = await fetch(`${API_BASE_URL}${ENDPOINTS.CATEGORIES}`);
       const data = await response.json();
       setCategories(data.categories || []);
     } catch (error) {
