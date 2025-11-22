@@ -1,6 +1,7 @@
 const express = require("express");
 const db = require("../config/database");
 const { verifyToken } = require("./authRoutes");
+const { sendOrderConfirmationEmail, sendAdminNewOrderEmail } = require("../utils/emailService");
 
 const router = express.Router();
 
@@ -53,6 +54,26 @@ router.post("/", optionalAuth, async (req, res) => {
         }
       }
 
+      // Send confirmation emails
+      const orderData = {
+        orderId,
+        customerName: full_name,
+        customerEmail: email,
+        totalPrice: total_price,
+        items: items || [],
+        shippingAddress: shipping_address,
+        city,
+        pincode,
+        paymentMethod: payment_method,
+        phone,
+      };
+
+      // Send to customer
+      sendOrderConfirmationEmail(orderData).catch(err => console.error("Failed to send customer email:", err));
+
+      // Send to admin
+      sendAdminNewOrderEmail(orderData).catch(err => console.error("Failed to send admin email:", err));
+
       return res.status(201).json({
         id: orderId,
         user_id,
@@ -84,6 +105,26 @@ router.post("/", optionalAuth, async (req, res) => {
           );
         }
       }
+
+      // Send confirmation emails
+      const orderData = {
+        orderId,
+        customerName: guest_name,
+        customerEmail: guest_email,
+        totalPrice: total_price,
+        items: items || [],
+        shippingAddress: shipping_address,
+        city,
+        pincode,
+        paymentMethod: payment_method,
+        phone,
+      };
+
+      // Send to customer
+      sendOrderConfirmationEmail(orderData).catch(err => console.error("Failed to send customer email:", err));
+
+      // Send to admin
+      sendAdminNewOrderEmail(orderData).catch(err => console.error("Failed to send admin email:", err));
 
       return res.status(201).json({
         id: orderId,
