@@ -235,9 +235,9 @@ export default function AdminDashboard() {
 
         {/* Other Tabs */}
         {tab !== "dashboard" && (
-          <div className={(tab === "orders" || tab === "users" || tab === "categories") ? "w-full" : "grid grid-cols-1 lg:grid-cols-3 gap-8"}>
+          <div className={(tab === "orders" || tab === "users" || tab === "categories") ? "w-full" : "w-full"}>
             {/* Main Content */}
-            <div className={(tab === "orders" || tab === "users" || tab === "categories") ? "w-full" : "lg:col-span-2"}>
+            <div className="w-full">
               <div className="bg-white rounded-xl p-6 border border-gray-100">
                 {tab === "create" && <ProductUploadForm />}
                 {(tab === "list" || tab === "edit" || tab === "delete") && (
@@ -420,46 +420,50 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
+          </div>
+        )}
 
-            {/* Sidebar - Only show for product management tabs */}
-            {tab !== "orders" && (
-              <div>
+        {/* Modal Popup for Edit and Delete */}
+        {selected && (tab === "edit" || tab === "delete") && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full my-8">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white rounded-t-xl">
+                <h3 className="text-xl font-bold text-gray-900">
+                  {tab === "edit" ? "Edit Product" : "Delete Product"}
+                </h3>
+                <button
+                  onClick={() => setSelected(null)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors text-2xl leading-none"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
                 {tab === "edit" && selected && (
-                  <div className="bg-white rounded-xl p-6 border border-gray-100 sticky top-24">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">Edit Product</h3>
-                    <EditProductForm
-                      product={selected}
-                      onSaved={(updated) => {
-                        setSelected(updated);
-                      }}
-                      onCancel={() => setSelected(null)}
-                    />
-                  </div>
+                  <EditProductForm
+                    product={selected}
+                    onSaved={(updated) => {
+                      setSelected(updated);
+                    }}
+                    onCancel={() => setSelected(null)}
+                  />
                 )}
 
                 {tab === "delete" && selected && (
-                  <div className="bg-white rounded-xl p-6 border border-gray-100 sticky top-24">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">Delete Product</h3>
-                    <DeleteProductConfirm
-                      product={selected}
-                      onDeleted={() => {
-                        setSelected(null);
-                        setTab("list");
-                      }}
-                      onCancel={() => setSelected(null)}
-                    />
-                  </div>
-                )}
-
-                {!selected && (tab === "edit" || tab === "delete") && (
-                  <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
-                    <p className="text-sm text-gray-600">
-                      Select a product from the list to {tab === "edit" ? "edit" : "delete"} it
-                    </p>
-                  </div>
+                  <DeleteProductConfirm
+                    product={selected}
+                    onDeleted={() => {
+                      setSelected(null);
+                      setTab("list");
+                    }}
+                    onCancel={() => setSelected(null)}
+                  />
                 )}
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>

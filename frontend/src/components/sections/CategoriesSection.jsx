@@ -37,25 +37,25 @@ export default function CategoriesSection() {
   }
 
   return (
-    <div className="bg-white border-t border-gray-100 py-12 sm:py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 sm:mb-12">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black mb-2">
+    <div className="bg-white border-t border-gray-100 py-8 sm:py-16">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="mb-6 sm:mb-12">
+          <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold text-black mb-1 sm:mb-2">
             Shop by Category
           </h2>
-          <p className="text-gray-600 text-sm sm:text-base">
+          <p className="text-gray-600 text-xs sm:text-base">
             Explore our wide range of products organized by category
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 lg:gap-6">
           {categories.map((category) => (
             <Link
               key={category.id}
               to={`/category/${category.slug}`}
               className="group"
             >
-              <div className="relative h-32 sm:h-40 lg:h-48 bg-gray-100 rounded-lg sm:rounded-xl overflow-hidden mb-2 sm:mb-3 border border-gray-200 hover:border-blue-300 transition-all">
+              <div className="relative h-24 sm:h-40 lg:h-48 bg-gray-100 rounded-lg overflow-hidden mb-1 sm:mb-3 border border-gray-200 hover:border-blue-300 transition-all">
                 {category.image ? (
                   <img
                     src={getBackendImageUrl(category.image)}
@@ -77,7 +77,7 @@ export default function CategoriesSection() {
                 {category.name}
               </h3>
               {category.description && (
-                <p className="text-gray-600 text-xs line-clamp-1">
+                <p className="text-gray-600 text-xs line-clamp-1 hidden sm:block">
                   {category.description}
                 </p>
               )}
@@ -86,10 +86,10 @@ export default function CategoriesSection() {
         </div>
 
         {categories.length > 0 && (
-          <div className="text-center mt-8 sm:mt-12">
+          <div className="text-center mt-6 sm:mt-12">
             <Link
               to="/shop"
-              className="inline-flex items-center gap-2 px-6 sm:px-8 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base font-medium"
+              className="inline-flex items-center gap-2 px-4 sm:px-8 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-base font-medium"
             >
               View All Categories
             </Link>
