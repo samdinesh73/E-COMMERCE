@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL, ENDPOINTS } from "../constants/config";
+import { ChevronDown } from "lucide-react";
 
 export default function MyAccount() {
   const { user, token, logout } = useAuth();
@@ -9,6 +10,7 @@ export default function MyAccount() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
 
   useEffect(() => {
     if (!token) {
@@ -122,47 +124,105 @@ export default function MyAccount() {
         )}
 
         {!loading && !error && orders.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-semibold">Order ID</th>
-                  <th className="text-left py-3 px-4 font-semibold">Date</th>
-                  <th className="text-left py-3 px-4 font-semibold">Amount</th>
-                  <th className="text-left py-3 px-4 font-semibold">Payment Method</th>
-                  <th className="text-left py-3 px-4 font-semibold">Status</th>
-                  <th className="text-left py-3 px-4 font-semibold">Address</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <tr key={order.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4 font-semibold">#{order.id}</td>
-                    <td className="py-3 px-4">
-                      {new Date(order.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-4 font-semibold">₹ {Number(order.total_price).toFixed(2)}</td>
-                    <td className="py-3 px-4 capitalize">{order.payment_method}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-3 py-1 rounded text-xs font-semibold ${
-                          order.status === "pending"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : order.status === "completed"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-xs text-gray-600">
-                      {order.city}, {order.pincode}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-4">
+            {orders.map((order) => (
+              <div key={order.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                {/* Order Header - Clickable to expand */}
+                <button
+                  onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
+                  className="w-full px-4 py-4 hover:bg-gray-50 flex items-center justify-between"
+                >
+                  <div className="flex-1 text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-600">Order ID</p>
+                        <p className="font-semibold">#{order.id}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600">Date</p>
+                        <p className="font-semibold">{new Date(order.created_at).toLocaleDateString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600">Amount</p>
+                        <p className="font-semibold">₹ {Number(order.total_price).toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600">Payment</p>
+                        <p className="font-semibold capitalize">{order.payment_method}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600">Status</p>
+                        <span
+                          className={`inline-block px-3 py-1 rounded text-xs font-semibold ${
+                            order.status === "pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : order.status === "completed"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronDown
+                    className={`h-5 w-5 text-gray-600 transition-transform ${
+                      expandedOrderId === order.id ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {/* Order Details - Expanded View */}
+                {expandedOrderId === order.id && (
+                  <div className="border-t border-gray-200 bg-gray-50 px-4 py-4 space-y-4">
+                    {/* Shipping Address */}
+                    <div>
+                      <h4 className="font-semibold mb-2">Shipping Address</h4>
+                      <p className="text-sm text-gray-700">
+                        {order.shipping_address}, {order.city} - {order.pincode}
+                      </p>
+                    </div>
+
+                    {/* Order Items */}
+                    <div>
+                      <h4 className="font-semibold mb-3">Items</h4>
+                      <div className="space-y-3">
+                        {order.items && order.items.length > 0 ? (
+                          order.items.map((item, idx) => (
+                            <div key={idx} className="bg-white p-3 rounded border border-gray-200">
+                              <div className="flex justify-between items-start mb-2">
+                                <div>
+                                  <p className="font-semibold">{item.name}</p>
+                                  <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                                </div>
+                                <p className="font-semibold">₹ {(Number(item.price) * Number(item.quantity)).toFixed(2)}</p>
+                              </div>
+
+                              {/* Show Variations if present */}
+                              {item.selectedVariations && Object.keys(item.selectedVariations).length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-gray-200">
+                                  <p className="text-xs font-semibold text-gray-700 mb-1">Variations:</p>
+                                  <div className="space-y-1">
+                                    {Object.entries(item.selectedVariations).map(([type, variation]) => (
+                                      <div key={type} className="text-xs text-gray-600">
+                                        <span className="font-medium">{type}:</span> {variation.variation_value || variation.name}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-sm text-gray-600">No items in this order</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>

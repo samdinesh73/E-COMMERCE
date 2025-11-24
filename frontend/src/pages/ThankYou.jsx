@@ -103,20 +103,39 @@ export default function ThankYou() {
               </thead>
               <tbody>
                 {items.map((item, idx) => (
-                  <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-4 px-4">
-                      <p className="font-semibold text-gray-900">
-                        {item.product_name || item.name || "Product"}
-                      </p>
-                    </td>
-                    <td className="text-center py-4 px-4 text-gray-600">{item.quantity}</td>
-                    <td className="text-right py-4 px-4 text-gray-600">
-                      ₹{parseFloat(item.price).toFixed(2)}
-                    </td>
-                    <td className="text-right py-4 px-4 font-semibold text-gray-900">
-                      ₹{(parseFloat(item.price) * item.quantity).toFixed(2)}
-                    </td>
-                  </tr>
+                  <React.Fragment key={idx}>
+                    <tr className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-4 px-4">
+                        <p className="font-semibold text-gray-900">
+                          {item.product_name || item.name || "Product"}
+                        </p>
+                      </td>
+                      <td className="text-center py-4 px-4 text-gray-600">{item.quantity}</td>
+                      <td className="text-right py-4 px-4 text-gray-600">
+                        ₹{parseFloat(item.price).toFixed(2)}
+                      </td>
+                      <td className="text-right py-4 px-4 font-semibold text-gray-900">
+                        ₹{(parseFloat(item.price) * item.quantity).toFixed(2)}
+                      </td>
+                    </tr>
+                    {/* Show Variations if present */}
+                    {item.selectedVariations && Object.keys(item.selectedVariations).length > 0 && (
+                      <tr className="bg-gray-50 border-b border-gray-100">
+                        <td colSpan="4" className="py-3 px-4">
+                          <div className="text-sm">
+                            <p className="font-semibold text-gray-700 mb-2">Variations:</p>
+                            <div className="space-y-1 ml-4">
+                              {Object.entries(item.selectedVariations).map(([type, variation]) => (
+                                <p key={type} className="text-gray-600">
+                                  <span className="font-medium">{type}:</span> {variation.variation_value || variation.name}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

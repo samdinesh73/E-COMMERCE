@@ -33,7 +33,13 @@ export default function OrderDetail() {
     setLoading(true);
     setError(null);
     try {
+      console.log(`🔍 Fetching order detail for order: ${orderId}`);
       const response = await axios.get(`${API_BASE_URL}/orders/admin/order-detail/${orderId}`);
+      
+      console.log(`✅ Response received:`, response.data);
+      console.log(`📦 Order:`, response.data.order);
+      console.log(`📦 Items:`, response.data.items);
+      
       setOrder(response.data.order);
       setItems(response.data.items || []);
       setFormData({
@@ -46,9 +52,12 @@ export default function OrderDetail() {
         phone: response.data.order.phone || response.data.order.phone_number || "",
         full_name: response.data.order.full_name || response.data.order.guest_name || ""
       });
+      console.log(`✅ Order details loaded successfully`);
     } catch (err) {
-      console.error("Error fetching order:", err);
-      setError("Failed to load order details");
+      console.error("❌ Error fetching order:", err);
+      console.error("Error response:", err.response?.data);
+      console.error("Error message:", err.message);
+      setError(`Failed to load order: ${err.response?.data?.error || err.message || "Unknown error"}`);
     } finally {
       setLoading(false);
     }
@@ -260,31 +269,73 @@ export default function OrderDetail() {
                 Order Items
               </h2>
               {items && items.length > 0 ? (
-                <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Product Name</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Product ID</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Quantity</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Price</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {items.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.product_name}</td>
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.product_id}</td>
-                          <td className="px-4 py-3 text-sm text-gray-700">{item.quantity}</td>
-                          <td className="px-4 py-3 text-sm text-gray-700">₹{parseFloat(item.price).toFixed(2)}</td>
-                          <td className="px-4 py-3 text-sm font-semibold text-gray-900">
-                            ₹{(parseFloat(item.price) * item.quantity).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-4">
+                  {items.map((item, idx) => (
+                    <div key={idx} className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                          <div>
+                            <p className="text-xs text-gray-600 uppercase tracking-wide font-semibold">Product Name</p>
+                            <p className="text-gray-900 font-medium">{item.product_name}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600 uppercase tracking-wide font-semibold">Product ID</p>
+                            <p className="text-gray-900">{item.product_id}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600 uppercase tracking-wide font-semibold">Quantity</p>
+                            <p className="text-gray-900">{item.quantity}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600 uppercase tracking-wide font-semibold">Price</p>
+                            <p className="text-gray-900">₹{parseFloat(item.price).toFixed(2)}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600 uppercase tracking-wide font-semibold">Total</p>
+                            <p className="text-gray-900 font-semibold">₹{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Show Variations if present */}
+                      {item.selectedVariations && Object.keys(item.selectedVariations).length > 0 ? (
+                        <div className="px-4 py-3 bg-blue-50">
+                          <p className="text-sm font-semibold text-gray-900 mb-2">Variations:</p>
+                          <div className="space-y-1 ml-4">
+                            {Object.entries(item.selectedVariations).map(([type, variation]) => {
+                              // Handle different variation formats
+                              let displayValue = "";
+                              
+                              if (typeof variation === "string") {
+                                // Simple string value
+                                displayValue = variation;
+                              } else if (typeof variation === "object" && variation !== null) {
+                                // Object format - try multiple field names
+                                displayValue = variation.variation_value || 
+                                              variation.value || 
+                                              variation.name || 
+                                              JSON.stringify(variation);
+                              } else {
+                                displayValue = String(variation);
+                              }
+                              
+                              console.log(`📦 Variation ${type}:`, variation, "->", displayValue);
+                              
+                              return (
+                                <p key={type} className="text-sm text-gray-700">
+                                  <span className="font-medium">{type}:</span> {displayValue}
+                                </p>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="px-4 py-3 bg-gray-50 text-gray-600 text-sm">
+                          No variations for this item
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="bg-gray-50 p-6 rounded-lg text-center">

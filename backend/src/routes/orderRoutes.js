@@ -46,12 +46,29 @@ router.post("/", optionalAuth, async (req, res) => {
 
       // Save order items
       if (items && Array.isArray(items) && items.length > 0) {
+        console.log(`💾 Saving ${items.length} items for order ${orderId}...`);
         for (const item of items) {
-          await db.execute(
-            "INSERT INTO order_items (order_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)",
-            [orderId, item.id || null, item.name, item.quantity, item.price]
-          );
+          const product_id = item.product_id || item.id;
+          const product_name = item.name || item.product_name || "Unknown Product";
+          const quantity = item.quantity || 1;
+          const price = item.price || 0;
+          const variations = item.selectedVariations || {};
+          
+          console.log(`  📦 Item: ID=${product_id}, Name=${product_name}, Qty=${quantity}, Price=${price}`);
+          console.log(`     Variations:`, JSON.stringify(variations));
+          
+          try {
+            await db.execute(
+              "INSERT INTO order_items (order_id, product_id, product_name, quantity, price, variations) VALUES (?, ?, ?, ?, ?, ?)",
+              [orderId, product_id, product_name, quantity, price, JSON.stringify(variations)]
+            );
+            console.log(`    ✅ Item saved successfully with variations`);
+          } catch (itemErr) {
+            console.error(`    ❌ Error saving item:`, itemErr);
+            throw itemErr;
+          }
         }
+        console.log(`✅ All items saved for order ${orderId}`);
       }
 
       // Send confirmation emails
@@ -98,12 +115,29 @@ router.post("/", optionalAuth, async (req, res) => {
 
       // Save order items for guest order
       if (items && Array.isArray(items) && items.length > 0) {
+        console.log(`💾 Saving ${items.length} items for guest order ${orderId}...`);
         for (const item of items) {
-          await db.execute(
-            "INSERT INTO guest_order_items (order_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)",
-            [orderId, item.id || null, item.name, item.quantity, item.price]
-          );
+          const product_id = item.product_id || item.id;
+          const product_name = item.name || item.product_name || "Unknown Product";
+          const quantity = item.quantity || 1;
+          const price = item.price || 0;
+          const variations = item.selectedVariations || {};
+          
+          console.log(`  📦 Item: ID=${product_id}, Name=${product_name}, Qty=${quantity}, Price=${price}`);
+          console.log(`     Variations:`, JSON.stringify(variations));
+          
+          try {
+            await db.execute(
+              "INSERT INTO guest_order_items (order_id, product_id, product_name, quantity, price, variations) VALUES (?, ?, ?, ?, ?, ?)",
+              [orderId, product_id, product_name, quantity, price, JSON.stringify(variations)]
+            );
+            console.log(`    ✅ Item saved successfully with variations`);
+          } catch (itemErr) {
+            console.error(`    ❌ Error saving item:`, itemErr);
+            throw itemErr;
+          }
         }
+        console.log(`✅ All items saved for guest order ${orderId}`);
       }
 
       // Send confirmation emails
@@ -147,18 +181,53 @@ router.post("/", optionalAuth, async (req, res) => {
 router.get("/", verifyToken, async (req, res) => {
   try {
     const user_id = req.user.id;
+    console.log(`📋 Fetching orders for user ${user_id}...`);
+    
     // Fetch from login_orders table for authenticated users
     const [orders] = await db.execute(
       "SELECT * FROM login_orders WHERE user_id = ? ORDER BY created_at DESC",
       [user_id]
     );
 
-    return res.json({ orders });
+    console.log(`✅ Found ${orders.length} orders for user ${user_id}`);
+
+    // Fetch items with variations for each order
+    const ordersWithItems = await Promise.all(orders.map(async (order) => {
+      const [items] = await db.execute(
+        "SELECT id, product_id, product_name, quantity, price, variations FROM order_items WHERE order_id = ?",
+        [order.id]
+      );
+      
+      console.log(`  📦 Order #${order.id}: ${items.length} items`);
+      
+      // Parse variations JSON for each item
+      const parsedItems = items.map(item => {
+        try {
+          return {
+            ...item,
+            selectedVariations: item.variations ? JSON.parse(item.variations) : {}
+          };
+        } catch (parseErr) {
+          console.error(`    ⚠️ Error parsing variations for item ${item.id}:`, parseErr);
+          return {
+            ...item,
+            selectedVariations: {}
+          };
+        }
+      });
+
+      return { ...order, items: parsedItems };
+    }));
+
+    console.log(`✅ Returning ${ordersWithItems.length} orders with items`);
+    return res.json({ orders: ordersWithItems });
   } catch (err) {
-    console.error("Get orders error:", err);
-    return res.status(500).json({ error: "Failed to fetch orders" });
+    console.error("❌ Get orders error:", err);
+    return res.status(500).json({ error: "Failed to fetch orders", details: err.message });
   }
 });
+
+// ====== ALL ADMIN ROUTES MUST COME BEFORE /:id ======
 
 // Get all orders for admin (both login_orders and orders tables)
 router.get("/admin/all-orders", async (req, res) => {
@@ -205,29 +274,6 @@ router.get("/admin/all-orders", async (req, res) => {
   }
 });
 
-// Get single order by ID (authenticated only)
-router.get("/:id", verifyToken, async (req, res) => {
-  try {
-    const order_id = req.params.id;
-    const user_id = req.user.id;
-
-    // Try login_orders first, then orders
-    const [orders] = await db.execute(
-      "SELECT * FROM login_orders WHERE id = ? AND user_id = ?",
-      [order_id, user_id]
-    );
-
-    if (!orders || orders.length === 0) {
-      return res.status(404).json({ error: "Order not found" });
-    }
-
-    return res.json({ order: orders[0] });
-  } catch (err) {
-    console.error("Get order error:", err);
-    return res.status(500).json({ error: "Failed to fetch order" });
-  }
-});
-
 // Get login orders for admin
 router.get("/admin/login-orders", async (req, res) => {
   try {
@@ -258,43 +304,124 @@ router.get("/admin/guest-orders", async (req, res) => {
 router.get("/admin/order-detail/:id", async (req, res) => {
   try {
     const order_id = req.params.id;
+    console.log(`\n📋 Fetching order detail for order_id: ${order_id}`);
 
     // Try login_orders first
+    console.log(`🔍 Checking login_orders table...`);
     const [loginOrders] = await db.execute(
       "SELECT * FROM login_orders WHERE id = ?",
       [order_id]
     );
+    console.log(`✅ login_orders result:`, loginOrders.length > 0 ? "Found" : "Not found");
 
     if (loginOrders && loginOrders.length > 0) {
-      // Fetch order items
+      console.log(`✅ Order found in login_orders, fetching items...`);
+      
+      // Fetch order items with variations
       const [items] = await db.execute(
-        "SELECT * FROM order_items WHERE order_id = ?",
+        "SELECT id, product_id, product_name, quantity, price, variations FROM order_items WHERE order_id = ?",
         [order_id]
       );
+      
+      console.log(`📦 Found ${items.length} items in order_items table`);
+      if (items.length > 0) {
+        console.log(`📦 Sample item:`, JSON.stringify(items[0]));
+      }
 
-      return res.json({ order: loginOrders[0], items: items || [], table: "login_orders" });
+      // Parse variations JSON
+      const parsedItems = items.map(item => {
+        try {
+          let selectedVariations = {};
+          
+          if (item.variations) {
+            console.log(`  📦 Raw variations for item ${item.id}:`, item.variations);
+            try {
+              selectedVariations = JSON.parse(item.variations);
+              console.log(`  ✅ Parsed variations:`, selectedVariations);
+            } catch (parseErr) {
+              console.error(`  ❌ Parse error:`, parseErr.message);
+              console.log(`  Raw value was:`, item.variations);
+            }
+          }
+          
+          return {
+            ...item,
+            selectedVariations
+          };
+        } catch (mapErr) {
+          console.error(`⚠️ Error processing item ${item.id}:`, mapErr);
+          return {
+            ...item,
+            selectedVariations: {}
+          };
+        }
+      });
+
+      console.log(`✅ Returning order with ${parsedItems.length} items from login_orders`);
+      return res.json({ order: loginOrders[0], items: parsedItems, table: "login_orders" });
     }
 
     // Try orders table
+    console.log(`🔍 Checking orders table...`);
     const [guestOrders] = await db.execute(
       "SELECT * FROM orders WHERE id = ?",
       [order_id]
     );
+    console.log(`✅ orders result:`, guestOrders.length > 0 ? "Found" : "Not found");
 
     if (guestOrders && guestOrders.length > 0) {
-      // Fetch order items from guest_order_items
+      console.log(`✅ Order found in orders, fetching items...`);
+      
+      // Fetch order items from guest_order_items with variations
       const [items] = await db.execute(
-        "SELECT * FROM guest_order_items WHERE order_id = ?",
+        "SELECT id, product_id, product_name, quantity, price, variations FROM guest_order_items WHERE order_id = ?",
         [order_id]
       );
 
-      return res.json({ order: guestOrders[0], items: items || [], table: "orders" });
+      console.log(`📦 Found ${items.length} items in guest_order_items table`);
+      if (items.length > 0) {
+        console.log(`📦 Sample item:`, JSON.stringify(items[0]));
+      }
+
+      // Parse variations JSON
+      const parsedItems = items.map(item => {
+        try {
+          let selectedVariations = {};
+          
+          if (item.variations) {
+            console.log(`  📦 Raw variations for item ${item.id}:`, item.variations);
+            try {
+              selectedVariations = JSON.parse(item.variations);
+              console.log(`  ✅ Parsed variations:`, selectedVariations);
+            } catch (parseErr) {
+              console.error(`  ❌ Parse error:`, parseErr.message);
+              console.log(`  Raw value was:`, item.variations);
+            }
+          }
+          
+          return {
+            ...item,
+            selectedVariations
+          };
+        } catch (mapErr) {
+          console.error(`⚠️ Error processing item ${item.id}:`, mapErr);
+          return {
+            ...item,
+            selectedVariations: {}
+          };
+        }
+      });
+
+      console.log(`✅ Returning order with ${parsedItems.length} items from orders`);
+      return res.json({ order: guestOrders[0], items: parsedItems, table: "orders" });
     }
 
+    console.log(`❌ Order ${order_id} not found in either table`);
     return res.status(404).json({ error: "Order not found" });
   } catch (err) {
-    console.error("Get order detail error:", err);
-    return res.status(500).json({ error: "Failed to fetch order details" });
+    console.error("❌ Get order detail error:", err);
+    console.error("Error stack:", err.stack);
+    return res.status(500).json({ error: "Failed to fetch order details", details: err.message });
   }
 });
 
@@ -360,6 +487,61 @@ router.delete("/admin/order/:id", async (req, res) => {
   } catch (err) {
     console.error("Delete order error:", err);
     return res.status(500).json({ error: "Failed to delete order" });
+  }
+});
+
+// ====== USER ROUTE MUST COME LAST AFTER ALL /admin/* ROUTES ======
+
+// Get single order by ID (authenticated only)
+router.get("/:id", verifyToken, async (req, res) => {
+  try {
+    const order_id = req.params.id;
+    const user_id = req.user.id;
+
+    // Try login_orders first, then orders
+    const [orders] = await db.execute(
+      "SELECT * FROM login_orders WHERE id = ? AND user_id = ?",
+      [order_id, user_id]
+    );
+
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    // Fetch order items with variations
+    const [items] = await db.execute(
+      "SELECT id, product_id, product_name, quantity, price, variations FROM order_items WHERE order_id = ?",
+      [order_id]
+    );
+
+    // Parse variations JSON for each item
+    const parsedItems = items.map(item => {
+      try {
+        let selectedVariations = {};
+        
+        if (item.variations) {
+          selectedVariations = JSON.parse(item.variations);
+        }
+        
+        return {
+          ...item,
+          selectedVariations
+        };
+      } catch (parseErr) {
+        console.error(`⚠️ Error parsing variations for item ${item.id}:`, parseErr);
+        return {
+          ...item,
+          selectedVariations: {}
+        };
+      }
+    });
+
+    const order = { ...orders[0], items: parsedItems };
+
+    return res.json({ order });
+  } catch (err) {
+    console.error("Get order error:", err);
+    return res.status(500).json({ error: "Failed to fetch order" });
   }
 });
 

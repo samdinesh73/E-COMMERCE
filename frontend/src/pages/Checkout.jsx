@@ -65,7 +65,23 @@ export default function Checkout() {
             guest_email: form.email,
             phone: form.phone,
           }),
-          items,
+          items: items.map(item => {
+            console.log(`📦 Checkout Item:`, {
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              selectedVariations: item.selectedVariations
+            });
+            return {
+              product_id: item.id,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              image: item.image,
+              selectedVariations: item.selectedVariations || {}
+            };
+          }),
         }),
       });
 

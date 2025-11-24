@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { productService, categoryService } from "../../services/api";
-import { Loader, X, Plus } from "lucide-react";
+import { Loader, X, Plus, Trash2 } from "lucide-react";
+import axios from "axios";
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 export default function ProductUploadForm() {
   const [form, setForm] = useState({ name: "", price: "", description: "", category_id: "" });
@@ -10,6 +13,20 @@ export default function ProductUploadForm() {
   const [loading, setLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  
+  // Variation state - now stores multiple variation types
+  const [variationGroups, setVariationGroups] = useState([
+    {
+      groupId: 1,
+      type: "Size",
+      variations: [
+        { id: 1, name: "S", price: 0, images: [], imagePreviews: [] },
+        { id: 2, name: "M", price: 0, images: [], imagePreviews: [] },
+        { id: 3, name: "L", price: 0, images: [], imagePreviews: [] },
+        { id: 4, name: "XL", price: 0, images: [], imagePreviews: [] },
+      ]
+    }
+  ]);
 
   useEffect(() => {
     fetchCategories();
@@ -94,6 +111,131 @@ export default function ProductUploadForm() {
     );
   };
 
+  // Variation Handlers
+  const handleVariationPriceChange = (groupId, variationId, price) => {
+    setVariationGroups((prev) =>
+      prev.map((group) =>
+        group.groupId === groupId
+          ? {
+              ...group,
+              variations: group.variations.map((v) =>
+                v.id === variationId ? { ...v, price: parseFloat(price) || 0 } : v
+              )
+            }
+          : group
+      )
+    );
+  };
+
+  const handleVariationImagesChange = (groupId, variationId, files) => {
+    const fileArray = Array.from(files || []);
+    
+    setVariationGroups((prev) =>
+      prev.map((group) => {
+        if (group.groupId === groupId) {
+          return {
+            ...group,
+            variations: group.variations.map((v) => {
+              if (v.id === variationId) {
+                const newImages = [...(v.images || [])];
+                const newPreviews = [...(v.imagePreviews || [])];
+                
+                fileArray.forEach((file) => {
+                  if (file.type.startsWith("image/")) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                      newPreviews.push(e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                    newImages.push(file);
+                  }
+                });
+                
+                return { ...v, images: newImages, imagePreviews: newPreviews };
+              }
+              return v;
+            })
+          };
+        }
+        return group;
+      })
+    );
+  };
+
+  const removeVariationImage = (groupId, variationId, imageIndex) => {
+    setVariationGroups((prev) =>
+      prev.map((group) => {
+        if (group.groupId === groupId) {
+          return {
+            ...group,
+            variations: group.variations.map((v) => {
+              if (v.id === variationId) {
+                return {
+                  ...v,
+                  images: v.images.filter((_, idx) => idx !== imageIndex),
+                  imagePreviews: v.imagePreviews.filter((_, idx) => idx !== imageIndex),
+                };
+              }
+              return v;
+            })
+          };
+        }
+        return group;
+      })
+    );
+  };
+
+  const addVariationRow = (groupId) => {
+    setVariationGroups((prev) =>
+      prev.map((group) => {
+        if (group.groupId === groupId) {
+          const newId = Math.max(...group.variations.map((v) => v.id), 0) + 1;
+          return {
+            ...group,
+            variations: [...group.variations, { id: newId, name: `Value${newId}`, price: 0, images: [], imagePreviews: [] }]
+          };
+        }
+        return group;
+      })
+    );
+  };
+
+  const removeVariation = (groupId, variationId) => {
+    setVariationGroups((prev) =>
+      prev.map((group) => {
+        if (group.groupId === groupId) {
+          return {
+            ...group,
+            variations: group.variations.filter((v) => v.id !== variationId)
+          };
+        }
+        return group;
+      })
+    );
+  };
+
+  const addVariationType = () => {
+    const newGroupId = Math.max(...variationGroups.map((g) => g.groupId), 0) + 1;
+    setVariationGroups((prev) => [
+      ...prev,
+      {
+        groupId: newGroupId,
+        type: "Color",
+        variations: [{ id: 1, name: "", price: 0, images: [], imagePreviews: [] }]
+      }
+    ]);
+  };
+
+  const removeVariationType = (groupId) => {
+    setVariationGroups((prev) => prev.filter((g) => g.groupId !== groupId));
+  };
+
+  const updateVariationType = (groupId, newType) => {
+    setVariationGroups((prev) =>
+      prev.map((group) => group.groupId === groupId ? { ...group, type: newType } : group)
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage(null);
@@ -104,10 +246,15 @@ export default function ProductUploadForm() {
       return;
     }
 
+    if (variationGroups.length === 0 || variationGroups[0].variations.length === 0) {
+      setMessage({ type: "error", text: "Please add at least one product variation." });
+      return;
+    }
+
     try {
       setLoading(true);
 
-      // Use FormData for multipart/form-data
+      // Step 1: Create product
       const formData = new FormData();
       formData.append("name", form.name);
       formData.append("price", Number(form.price));
@@ -116,26 +263,74 @@ export default function ProductUploadForm() {
         formData.append("category_id", form.category_id);
       }
       
-      // Append main image file if selected
       if (imageFile) {
         formData.append("image", imageFile);
       }
 
-      // Append additional images - use consistent naming
       additionalImages.forEach((img, index) => {
         formData.append('additional_images', img.file);
         formData.append(`angle_${index}`, img.angle);
       });
 
-      // Create product
       const res = await productService.create(formData);
-      setMessage({ type: "success", text: "Product uploaded successfully with all images!" });
+      const productId = res.data.id;
+
+      // Step 2: Create variations for this product
+      let variationCount = 0;
+      for (const group of variationGroups) {
+        for (const variation of group.variations) {
+          try {
+            // Create variation
+            const varRes = await axios.post(`${API_BASE_URL}/variations/${productId}`, {
+              variation_type: group.type,
+              variation_value: variation.name,
+              price_adjustment: variation.price || 0,
+              stock_quantity: 100,
+            });
+
+            const variationId = varRes.data.id;
+            variationCount++;
+
+            // Upload all images for this variation
+            for (let imgIndex = 0; imgIndex < variation.images.length; imgIndex++) {
+              const img = variation.images[imgIndex];
+              const imgFormData = new FormData();
+              imgFormData.append("image", img);
+
+              await axios.post(
+                `${API_BASE_URL}/variations/${productId}/${variationId}/images`,
+                imgFormData,
+                { headers: { "Content-Type": "multipart/form-data" } }
+              );
+            }
+          } catch (err) {
+            console.error(`Error creating variation:`, err);
+          }
+        }
+      }
+
+      setMessage({ 
+        type: "success", 
+        text: `✓ Product created with ${variationCount} variations successfully!` 
+      });
+      
+      // Reset form
       setForm({ name: "", price: "", description: "", category_id: "" });
       setImageFile(null);
       setAdditionalImages([]);
-      // Reset file input
+      setVariationGroups([
+        {
+          groupId: 1,
+          type: "Size",
+          variations: [
+            { id: 1, name: "S", price: 0, images: [], imagePreviews: [] },
+            { id: 2, name: "M", price: 0, images: [], imagePreviews: [] },
+            { id: 3, name: "L", price: 0, images: [], imagePreviews: [] },
+            { id: 4, name: "XL", price: 0, images: [], imagePreviews: [] },
+          ]
+        }
+      ]);
       e.target.reset();
-      console.log("Created product:", res.data);
     } catch (err) {
       console.error(err);
       setMessage({ type: "error", text: err.response?.data?.error || "Upload failed" });
@@ -248,11 +443,174 @@ export default function ProductUploadForm() {
         <textarea name="description" value={form.description} onChange={handleChange} rows={4} className="w-full border border-gray-300 rounded px-3 py-2" placeholder="Product description" />
       </div>
 
+      {/* Product Variations Section */}
+      <div className="mb-6 p-4 bg-blue-50 rounded-lg border-2 border-blue-300">
+        <div className="flex justify-between items-center mb-4">
+          <h4 className="text-lg font-bold text-gray-900">👕 Product Variations</h4>
+          <button
+            type="button"
+            onClick={addVariationType}
+            className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 flex items-center gap-1"
+          >
+            <Plus className="h-4 w-4" />
+            Add Variation Type
+          </button>
+        </div>
+
+        {/* Variation Groups */}
+        <div className="space-y-4">
+          {variationGroups.map((group) => (
+            <div key={group.groupId} className="bg-white border border-gray-200 rounded p-4">
+              {/* Variation Type Header */}
+              <div className="flex justify-between items-center mb-3 pb-3 border-b">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold mb-1 text-gray-700">Variation Type</label>
+                  <input
+                    type="text"
+                    value={group.type}
+                    onChange={(e) => updateVariationType(group.groupId, e.target.value)}
+                    className="w-full border border-gray-300 rounded px-2 py-2 text-sm font-medium"
+                    placeholder="e.g., Size, Color, Weight, Material"
+                  />
+                </div>
+                {variationGroups.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeVariationType(group.groupId)}
+                    className="ml-2 px-3 py-2 bg-red-500 text-white text-xs rounded hover:bg-red-600 flex items-center gap-1"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Remove
+                  </button>
+                )}
+              </div>
+
+              {/* Variations in this group */}
+              <div className="space-y-2">
+                {group.variations.map((variation) => (
+                  <div key={variation.id} className="bg-gray-50 rounded p-3 border border-gray-200">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
+                      {/* Name/Value */}
+                      <div>
+                        <label className="block text-xs font-semibold mb-1 text-gray-700">{group.type.toUpperCase()}</label>
+                        <input
+                          type="text"
+                          value={variation.name}
+                          onChange={(e) => {
+                            setVariationGroups((prev) =>
+                              prev.map((g) =>
+                                g.groupId === group.groupId
+                                  ? {
+                                      ...g,
+                                      variations: g.variations.map((v) =>
+                                        v.id === variation.id ? { ...v, name: e.target.value } : v
+                                      )
+                                    }
+                                  : g
+                              )
+                            );
+                          }}
+                          className="w-full border border-gray-300 rounded px-2 py-2 text-sm"
+                          placeholder={`e.g., S, Red, 500g`}
+                        />
+                      </div>
+
+                      {/* Price */}
+                      <div>
+                        <label className="block text-xs font-semibold mb-1 text-gray-700">PRICE (₹)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={variation.price}
+                          onChange={(e) => handleVariationPriceChange(group.groupId, variation.id, e.target.value)}
+                          className="w-full border border-gray-300 rounded px-2 py-2 text-sm"
+                          placeholder="0"
+                        />
+                      </div>
+
+                      {/* Delete Button */}
+                      <div className="flex items-end">
+                        {group.variations.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeVariation(group.groupId, variation.id)}
+                            className="w-full px-2 py-2 bg-red-500 text-white text-xs rounded hover:bg-red-600 flex items-center justify-center gap-1"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Images Upload Section */}
+                    <div className="mt-2 pt-2 border-t">
+                      <label className="block text-xs font-semibold mb-1 text-gray-700">Images</label>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={(e) => handleVariationImagesChange(group.groupId, variation.id, e.target.files)}
+                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                      />
+
+                      {/* Image Previews */}
+                      {variation.imagePreviews.length > 0 && (
+                        <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
+                          {variation.imagePreviews.map((preview, idx) => (
+                            <div key={idx} className="relative">
+                              <img src={preview} alt={`preview-${idx}`} className="h-16 w-16 object-cover rounded border border-gray-300" />
+                              <button
+                                type="button"
+                                onClick={() => removeVariationImage(group.groupId, variation.id, idx)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 w-6 h-6 flex items-center justify-center"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add Another button for this group */}
+              <button
+                type="button"
+                onClick={() => addVariationRow(group.groupId)}
+                className="mt-3 px-3 py-2 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 flex items-center gap-1"
+              >
+                <Plus className="h-3 w-3" />
+                Add Another {group.type}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="flex items-center gap-3">
         <button type="submit" disabled={loading} className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 disabled:bg-gray-400">
-          {loading ? "Uploading..." : "Upload Product"}
+          {loading ? "Uploading..." : "✓ Upload Product with Variations"}
         </button>
-        <button type="button" onClick={() => { setForm({ name: "", price: "", description: "", category_id: "" }); setImageFile(null); setAdditionalImages([]); }} className="px-4 py-2 border rounded hover:bg-gray-50">
+        <button type="button" onClick={() => { 
+          setForm({ name: "", price: "", description: "", category_id: "" }); 
+          setImageFile(null); 
+          setAdditionalImages([]);
+          setVariationGroups([
+            {
+              groupId: 1,
+              type: "Size",
+              variations: [
+                { id: 1, name: "S", price: 0, images: [], imagePreviews: [] },
+                { id: 2, name: "M", price: 0, images: [], imagePreviews: [] },
+                { id: 3, name: "L", price: 0, images: [], imagePreviews: [] },
+                { id: 4, name: "XL", price: 0, images: [], imagePreviews: [] },
+              ]
+            }
+          ]);
+        }} className="px-4 py-2 border rounded hover:bg-gray-50">
           Reset
         </button>
       </div>

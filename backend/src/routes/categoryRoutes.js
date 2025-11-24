@@ -42,7 +42,42 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Get single category with products (public)
+// ====== IMPORTANT: /slug/:slug MUST COME BEFORE /:id ======
+
+// Get products by category slug (public)
+router.get("/slug/:slug", async (req, res) => {
+  try {
+    const { slug } = req.params;
+    
+    // Get category by slug
+    const [categories] = await db.query(
+      "SELECT id, name, description, image, slug FROM categories WHERE slug = ?",
+      [slug]
+    );
+    
+    if (categories.length === 0) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+    
+    const category = categories[0];
+    
+    // Get products in this category
+    const [products] = await db.query(
+      "SELECT id, name, price, image, description, category_id FROM products WHERE category_id = ? ORDER BY name",
+      [category.id]
+    );
+    
+    res.json({
+      category,
+      products
+    });
+  } catch (err) {
+    console.error("Get category by slug error:", err);
+    res.status(500).json({ error: "Failed to fetch category" });
+  }
+});
+
+// Get single category with products by ID (public)
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -212,39 +247,6 @@ router.delete("/:id", authenticate, async (req, res) => {
   } catch (err) {
     console.error("Delete category error:", err);
     res.status(500).json({ error: "Failed to delete category" });
-  }
-});
-
-// Get products by category (public)
-router.get("/slug/:slug", async (req, res) => {
-  try {
-    const { slug } = req.params;
-    
-    // Get category by slug
-    const [categories] = await db.query(
-      "SELECT id, name, description, image, slug FROM categories WHERE slug = ?",
-      [slug]
-    );
-    
-    if (categories.length === 0) {
-      return res.status(404).json({ error: "Category not found" });
-    }
-    
-    const category = categories[0];
-    
-    // Get products in this category
-    const [products] = await db.query(
-      "SELECT id, name, price, image, description, category_id FROM products WHERE category_id = ? ORDER BY name",
-      [category.id]
-    );
-    
-    res.json({
-      category,
-      products
-    });
-  } catch (err) {
-    console.error("Get category by slug error:", err);
-    res.status(500).json({ error: "Failed to fetch category" });
   }
 });
 

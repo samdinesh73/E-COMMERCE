@@ -53,29 +53,52 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const addToCart = async (product, quantity = 1) => {
+  const addToCart = async (product, quantity = 1, selectedVariations = {}) => {
+    console.log(`🛒 Adding to cart:`, { product, quantity, selectedVariations });
+    
     setItems((prev) => {
-      const existing = prev.find((i) => i.id === product.id);
+      // Check if exact same product with same variations already exists
+      const existing = prev.find((i) => {
+        // Same product ID
+        if (i.id !== product.id) return false;
+        
+        // Check if variations match
+        const existingVarStr = JSON.stringify(i.selectedVariations || {});
+        const newVarStr = JSON.stringify(selectedVariations);
+        
+        return existingVarStr === newVarStr;
+      });
+      
       if (existing) {
+        console.log(`🔄 Item already in cart, updating quantity`);
         return prev.map((i) =>
-          i.id === product.id ? { ...i, quantity: i.quantity + quantity } : i
+          i.id === product.id && JSON.stringify(i.selectedVariations || {}) === JSON.stringify(selectedVariations)
+            ? { ...i, quantity: i.quantity + quantity }
+            : i
         );
       }
-      return [...prev, { ...product, quantity }];
+      
+      console.log(`✅ Adding new item to cart`);
+      const newItem = { ...product, quantity, selectedVariations };
+      console.log(`📦 New cart item:`, newItem);
+      return [...prev, newItem];
     });
 
     // Sync with backend if user is logged in
     if (user && token) {
       try {
+        console.log(`🔄 Syncing with backend...`);
         await axios.post(
           `${API_BASE_URL}${ENDPOINTS.CART}`,
           {
             product_id: product.id,
             quantity,
             price: product.price,
+            selectedVariations,
           },
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        console.log(`✅ Backend sync successful`);
       } catch (err) {
         console.error("Error adding item to backend cart:", err);
       }

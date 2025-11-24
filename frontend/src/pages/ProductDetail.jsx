@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { productService } from "../services/api";
-import { getImageUrl } from "../utils/imageHelper";
+import { getImageUrl, getBackendImageUrl } from "../utils/imageHelper";
 import ProductImageGallery from "../components/common/ProductImageGallery";
 import { useCart } from "../context/CartContext";
 import { Heart, ShoppingCart, Truck, Shield, RotateCcw, Loader, AlertCircle } from "lucide-react";
+import axios from "axios";
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -14,6 +17,8 @@ export default function ProductDetail() {
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [variations, setVariations] = useState([]);
+  const [selectedVariations, setSelectedVariations] = useState({}); // Maps variation_type -> selected variation
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -23,6 +28,9 @@ export default function ProductDetail() {
         const res = await productService.getById(id);
         setProduct(res.data);
         setError(null);
+        
+        // Fetch variations for this product
+        fetchVariations(res.data.id);
       } catch (err) {
         console.error("Error fetching product:", err);
         setError("Failed to load product details");
@@ -34,9 +42,19 @@ export default function ProductDetail() {
     fetchProduct();
   }, [id]);
 
+  const fetchVariations = async (productId) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/variations/${productId}`);
+      setVariations(response.data || []);
+      // Don't auto-select first variation - let user select manually
+    } catch (err) {
+      console.error("Error fetching variations:", err);
+    }
+  };
+
   const handleAddToCart = () => {
     if (!product) return;
-    addToCart(product, Number(quantity || 1));
+    addToCart(product, Number(quantity || 1), selectedVariations);
     alert(`Added ${quantity} item(s) to cart`);
   };
 
@@ -90,10 +108,29 @@ export default function ProductDetail() {
           {/* Image Section - Using Gallery Component */}
           <div className="flex items-start justify-center">
             <div className="w-full">
-              <ProductImageGallery
-                mainImage={product.image}
-                additionalImages={product.additional_images}
-              />
+              {(() => {
+                // Get first selected variation with images
+                const firstSelectedVariation = Object.values(selectedVariations).find(v => v && v.images && v.images.length > 0);
+                
+                if (firstSelectedVariation) {
+                  return (
+                    <ProductImageGallery
+                      mainImage={`${API_BASE_URL}/${firstSelectedVariation.images[0].image_path}`}
+                      additionalImages={firstSelectedVariation.images.slice(1).map((img) => ({
+                        image_path: `${API_BASE_URL}/${img.image_path}`,
+                        angle_description: `${firstSelectedVariation.variation_value}`
+                      }))}
+                    />
+                  );
+                } else {
+                  return (
+                    <ProductImageGallery
+                      mainImage={product.image}
+                      additionalImages={product.additional_images}
+                    />
+                  );
+                }
+              })()}
             </div>
           </div>
 
@@ -135,7 +172,18 @@ export default function ProductDetail() {
             {/* Price Section */}
             <div className="mb-6 sm:mb-8">
               <div className="flex items-center gap-3 sm:gap-4 mb-2 flex-wrap">
-                <span className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900">₹{product.price}</span>
+                <span className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900">
+                  ₹{(() => {
+                    const selectedVars = Object.values(selectedVariations);
+                    if (selectedVars.length > 0) {
+                      // Sum up all selected variation prices
+                      const totalPrice = selectedVars.reduce((sum, v) => sum + Number(v.price_adjustment || 0), 0);
+                      // If total is 0, show default product price
+                      return totalPrice > 0 ? Math.round(totalPrice) : Math.round(Number(product.price));
+                    }
+                    return Math.round(Number(product.price));
+                  })()}
+                </span>
                 <span className="inline-block px-2 sm:px-3 py-1 bg-green-100 text-green-700 text-xs sm:text-sm font-semibold rounded-full">
                   In Stock
                 </span>
@@ -147,6 +195,62 @@ export default function ProductDetail() {
             {product.description && (
               <div className="mb-6 sm:mb-8 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <p className="text-gray-700 text-xs sm:text-sm leading-relaxed">{product.description}</p>
+              </div>
+            )}
+
+            {/* Variations Section - Grouped by Type */}
+            {variations.length > 0 && (
+              <div className="mb-6 sm:mb-8 space-y-4">
+                {(() => {
+                  // Group variations by type
+                  const groupedVariations = {};
+                  variations.forEach((variation) => {
+                    if (!groupedVariations[variation.variation_type]) {
+                      groupedVariations[variation.variation_type] = [];
+                    }
+                    groupedVariations[variation.variation_type].push(variation);
+                  });
+                  
+                  return Object.entries(groupedVariations).map(([type, typeVariations]) => {
+                    const selectedForType = selectedVariations[type];
+                    
+                    return (
+                      <div key={type} className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-3">{type}</h3>
+                        <div className="flex flex-wrap gap-2 sm:gap-3">
+                          {typeVariations.map((variation) => (
+                            <button
+                              key={variation.id}
+                              onClick={() => {
+                                // Toggle: if already selected for this type, deselect; otherwise select
+                                if (selectedForType?.id === variation.id) {
+                                  const newSelections = { ...selectedVariations };
+                                  delete newSelections[type];
+                                  setSelectedVariations(newSelections);
+                                } else {
+                                  setSelectedVariations({
+                                    ...selectedVariations,
+                                    [type]: variation
+                                  });
+                                }
+                              }}
+                              className={`px-3 sm:px-4 py-2 sm:py-2 rounded-lg font-medium transition-all text-xs sm:text-sm ${
+                                selectedForType?.id === variation.id
+                                  ? "bg-blue-600 text-white shadow-md"
+                                  : "bg-white text-gray-900 border border-gray-300 hover:border-blue-400"
+                              }`}
+                            >
+                              {variation.variation_value}
+                              {variation.price_adjustment > 0 && (
+                                <span className="ml-1 text-xs">+₹{variation.price_adjustment}</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             )}
 

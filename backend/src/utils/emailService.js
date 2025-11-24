@@ -33,14 +33,27 @@ const sendOrderConfirmationEmail = async (orderData) => {
 
     const itemsHTML = items
       .map(
-        (item) => `
+        (item) => {
+          const variationsHTML = item.selectedVariations && Object.keys(item.selectedVariations).length > 0
+            ? `<tr style="background-color: #f0f0f0;">
+                <td colspan="4" style="padding: 8px; font-size: 12px;">
+                  <strong>Variations:</strong> ${Object.entries(item.selectedVariations)
+                    .map(([type, variation]) => `${type}: ${variation.variation_value || variation.name}`)
+                    .join(", ")}
+                </td>
+              </tr>`
+            : '';
+          
+          return `
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.product_name || item.name || "Unknown Product"}</td>
         <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${item.quantity}</td>
         <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">₹${parseFloat(item.price).toFixed(2)}</td>
         <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">₹${(parseFloat(item.price) * item.quantity).toFixed(2)}</td>
       </tr>
-    `
+      ${variationsHTML}
+    `;
+        }
       )
       .join("");
 
@@ -170,14 +183,27 @@ const sendAdminNewOrderEmail = async (orderData) => {
 
     const itemsHTML = items
       .map(
-        (item) => `
+        (item) => {
+          const variationsHTML = item.selectedVariations && Object.keys(item.selectedVariations).length > 0
+            ? `<tr style="background-color: #f0f0f0;">
+                <td colspan="4" style="padding: 8px; font-size: 12px;">
+                  <strong>Variations:</strong> ${Object.entries(item.selectedVariations)
+                    .map(([type, variation]) => `${type}: ${variation.variation_value || variation.name}`)
+                    .join(", ")}
+                </td>
+              </tr>`
+            : '';
+          
+          return `
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.product_name || item.name || "Unknown Product"}</td>
         <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${item.quantity}</td>
         <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">₹${parseFloat(item.price).toFixed(2)}</td>
         <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">₹${(parseFloat(item.price) * item.quantity).toFixed(2)}</td>
       </tr>
-    `
+      ${variationsHTML}
+    `;
+        }
       )
       .join("");
 
