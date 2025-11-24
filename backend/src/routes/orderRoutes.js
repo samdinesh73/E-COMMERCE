@@ -229,7 +229,54 @@ router.get("/", verifyToken, async (req, res) => {
 
 // ====== ALL ADMIN ROUTES MUST COME BEFORE /:id ======
 
-// Get all orders for admin (both login_orders and orders tables)
+// Diagnostic endpoint to check order data in database
+router.get("/admin/check-order/:id", async (req, res) => {
+  try {
+    const order_id = req.params.id;
+    console.log(`\n🔧 DIAGNOSTIC: Checking order ${order_id}...`);
+
+    // Check table structure
+    const [tableInfo] = await db.execute(
+      "DESCRIBE order_items"
+    );
+    console.log(`📋 order_items columns:`, tableInfo.map(col => `${col.Field} (${col.Type})`));
+
+    // Check if variations column exists
+    const hasVariations = tableInfo.some(col => col.Field === 'variations');
+    console.log(`✅ Has variations column:`, hasVariations);
+
+    // Get raw data from database
+    const [items] = await db.execute(
+      "SELECT * FROM order_items WHERE order_id = ?",
+      [order_id]
+    );
+
+    console.log(`📦 Found ${items.length} items for order ${order_id}`);
+    
+    const response = {
+      order_id,
+      items_count: items.length,
+      table_has_variations_column: hasVariations,
+      columns: tableInfo.map(col => col.Field),
+      items: items.map(item => ({
+        id: item.id,
+        product_id: item.product_id,
+        product_name: item.product_name,
+        variations_field_value: item.variations,
+        variations_field_type: typeof item.variations,
+        variations_is_null: item.variations === null
+      }))
+    };
+
+    console.log(`🔧 Diagnostic response:`, JSON.stringify(response, null, 2));
+    res.json(response);
+  } catch (err) {
+    console.error("Diagnostic error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ====== ALL ADMIN ROUTES MUST COME BEFORE /:id ======
 router.get("/admin/all-orders", async (req, res) => {
   try {
     const { fromDate, toDate } = req.query;
@@ -336,8 +383,14 @@ router.get("/admin/order-detail/:id", async (req, res) => {
           if (item.variations) {
             console.log(`  📦 Raw variations for item ${item.id}:`, item.variations);
             try {
-              selectedVariations = JSON.parse(item.variations);
-              console.log(`  ✅ Parsed variations:`, selectedVariations);
+              // Check if variations is already an object (mysql2 auto-parsing) or a string
+              if (typeof item.variations === 'object' && item.variations !== null) {
+                selectedVariations = item.variations;
+                console.log(`  ✅ Variations already object:`, selectedVariations);
+              } else if (typeof item.variations === 'string') {
+                selectedVariations = JSON.parse(item.variations);
+                console.log(`  ✅ Parsed variations from string:`, selectedVariations);
+              }
             } catch (parseErr) {
               console.error(`  ❌ Parse error:`, parseErr.message);
               console.log(`  Raw value was:`, item.variations);
@@ -391,8 +444,14 @@ router.get("/admin/order-detail/:id", async (req, res) => {
           if (item.variations) {
             console.log(`  📦 Raw variations for item ${item.id}:`, item.variations);
             try {
-              selectedVariations = JSON.parse(item.variations);
-              console.log(`  ✅ Parsed variations:`, selectedVariations);
+              // Check if variations is already an object (mysql2 auto-parsing) or a string
+              if (typeof item.variations === 'object' && item.variations !== null) {
+                selectedVariations = item.variations;
+                console.log(`  ✅ Variations already object:`, selectedVariations);
+              } else if (typeof item.variations === 'string') {
+                selectedVariations = JSON.parse(item.variations);
+                console.log(`  ✅ Parsed variations from string:`, selectedVariations);
+              }
             } catch (parseErr) {
               console.error(`  ❌ Parse error:`, parseErr.message);
               console.log(`  Raw value was:`, item.variations);

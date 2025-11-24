@@ -36,9 +36,23 @@ export default function OrderDetail() {
       console.log(`🔍 Fetching order detail for order: ${orderId}`);
       const response = await axios.get(`${API_BASE_URL}/orders/admin/order-detail/${orderId}`);
       
-      console.log(`✅ Response received:`, response.data);
-      console.log(`📦 Order:`, response.data.order);
-      console.log(`📦 Items:`, response.data.items);
+      console.log(`✅ Full Response:`, response.data);
+      console.log(`📦 Items from response:`, response.data.items);
+      
+      // Log each item's variations
+      if (response.data.items && Array.isArray(response.data.items)) {
+        response.data.items.forEach((item, idx) => {
+          console.log(`Item ${idx}:`, {
+            id: item.id,
+            product_id: item.product_id,
+            product_name: item.product_name,
+            variations: item.variations,
+            selectedVariations: item.selectedVariations,
+            selectedVariations_type: typeof item.selectedVariations,
+            selectedVariations_keys: item.selectedVariations ? Object.keys(item.selectedVariations) : 'N/A'
+          });
+        });
+      }
       
       setOrder(response.data.order);
       setItems(response.data.items || []);
@@ -298,40 +312,16 @@ export default function OrderDetail() {
                       </div>
                       
                       {/* Show Variations if present */}
-                      {item.selectedVariations && Object.keys(item.selectedVariations).length > 0 ? (
-                        <div className="px-4 py-3 bg-blue-50">
-                          <p className="text-sm font-semibold text-gray-900 mb-2">Variations:</p>
-                          <div className="space-y-1 ml-4">
-                            {Object.entries(item.selectedVariations).map(([type, variation]) => {
-                              // Handle different variation formats
-                              let displayValue = "";
-                              
-                              if (typeof variation === "string") {
-                                // Simple string value
-                                displayValue = variation;
-                              } else if (typeof variation === "object" && variation !== null) {
-                                // Object format - try multiple field names
-                                displayValue = variation.variation_value || 
-                                              variation.value || 
-                                              variation.name || 
-                                              JSON.stringify(variation);
-                              } else {
-                                displayValue = String(variation);
-                              }
-                              
-                              console.log(`📦 Variation ${type}:`, variation, "->", displayValue);
-                              
-                              return (
-                                <p key={type} className="text-sm text-gray-700">
-                                  <span className="font-medium">{type}:</span> {displayValue}
-                                </p>
-                              );
-                            })}
+                      {item.selectedVariations && Object.keys(item.selectedVariations).length > 0 && (
+                        <div className="px-4 py-3 bg-blue-50 border-t border-blue-200">
+                          <p className="text-sm font-semibold text-gray-900 mb-2">Selected Variations:</p>
+                          <div className="space-y-2 ml-4">
+                            {Object.entries(item.selectedVariations).map(([type, variation]) => (
+                              <p key={type} className="text-sm text-gray-600">
+                                <span className="font-medium text-gray-700">{type}:</span> {variation.variation_value || variation.name}
+                              </p>
+                            ))}
                           </div>
-                        </div>
-                      ) : (
-                        <div className="px-4 py-3 bg-gray-50 text-gray-600 text-sm">
-                          No variations for this item
                         </div>
                       )}
                     </div>
