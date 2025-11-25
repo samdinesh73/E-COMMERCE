@@ -8,6 +8,7 @@ export default function Shop() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [priceRange, setPriceRange] = useState({ min: 0, max: Infinity });
+  const [selectedVariations, setSelectedVariations] = useState({});
 
   // Close filters when clicking outside on mobile
   useEffect(() => {
@@ -87,8 +88,10 @@ export default function Shop() {
                     onFilterChange={() => {}}
                     onCategoryChange={setSelectedCategories}
                     onPriceChange={setPriceRange}
+                    onVariationChange={setSelectedVariations}
                     selectedCategories={selectedCategories}
                     priceRange={priceRange}
+                    selectedVariations={selectedVariations}
                     onClose={() => setShowFilters(false)}
                   />
                 </div>
@@ -102,6 +105,7 @@ export default function Shop() {
               searchTerm={searchTerm}
               selectedCategories={selectedCategories}
               priceRange={priceRange}
+              selectedVariations={selectedVariations}
             />
           </div>
         </div>

@@ -28,12 +28,12 @@ const authenticate = (req, res, next) => {
 router.get("/", async (req, res) => {
   try {
     const [categories] = await db.query(
-      `SELECT c.id, c.name, c.description, c.image, c.slug, 
+      `SELECT c.id, c.name, c.description, c.image, c.slug, c.parent_id,
               COUNT(p.id) as product_count
        FROM categories c
        LEFT JOIN products p ON c.id = p.category_id
-       GROUP BY c.id, c.name, c.description, c.image, c.slug
-       ORDER BY c.name`
+       GROUP BY c.id, c.name, c.description, c.image, c.slug, c.parent_id
+       ORDER BY c.parent_id, c.name`
     );
     res.json({ categories });
   } catch (err) {
@@ -42,16 +42,13 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ====== IMPORTANT: /slug/:slug MUST COME BEFORE /:id ======
-
 // Get products by category slug (public)
 router.get("/slug/:slug", async (req, res) => {
   try {
     const { slug } = req.params;
     
-    // Get category by slug
     const [categories] = await db.query(
-      "SELECT id, name, description, image, slug FROM categories WHERE slug = ?",
+      "SELECT id, name, description, image, slug, parent_id FROM categories WHERE slug = ?",
       [slug]
     );
     
@@ -61,7 +58,6 @@ router.get("/slug/:slug", async (req, res) => {
     
     const category = categories[0];
     
-    // Get products in this category
     const [products] = await db.query(
       "SELECT id, name, price, image, description, category_id FROM products WHERE category_id = ? ORDER BY name",
       [category.id]
@@ -82,9 +78,8 @@ router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Get category
     const [categories] = await db.query(
-      "SELECT id, name, description, image, slug FROM categories WHERE id = ?",
+      "SELECT id, name, description, image, slug, parent_id FROM categories WHERE id = ?",
       [id]
     );
     
@@ -92,7 +87,6 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ error: "Category not found" });
     }
     
-    // Get products in this category
     const [products] = await db.query(
       "SELECT id, name, price, image, description, category_id FROM products WHERE category_id = ? ORDER BY name",
       [id]
@@ -108,33 +102,93 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// Helper function to check for circular parent relationships
+const hasCircularParent = async (categoryId, parentId) => {
+  if (!parentId || parentId === "" || parentId === null) return false;
+  if (parseInt(categoryId) === parseInt(parentId)) return true;
+
+  let currentParentId = parseInt(parentId);
+  const visitedIds = new Set();
+
+  while (currentParentId) {
+    if (visitedIds.has(currentParentId)) return true;
+    visitedIds.add(currentParentId);
+
+    const [parent] = await db.query(
+      "SELECT parent_id FROM categories WHERE id = ?",
+      [currentParentId]
+    );
+
+    if (parent.length === 0) break;
+    currentParentId = parent[0].parent_id;
+  }
+
+  return false;
+};
+
 // Create category (admin only)
 router.post("/", authenticate, upload.single("image"), async (req, res) => {
   try {
-    const { name, description, slug } = req.body;
-    let imagePath = null;
-
-    if (!name) {
-      if (req.file) {
-        fs.unlink(req.file.path, (err) => {
-          if (err) console.error("Error deleting file:", err);
-        });
-      }
+    console.log("\n========== CREATE CATEGORY ==========");
+    console.log("[1] req.body RECEIVED:", req.body);
+    console.log("[1] req.body keys:", Object.keys(req.body));
+    
+    let { name, description, slug, parent_id } = req.body;
+    
+    console.log("[2] Extracted fields:");
+    console.log("    name:", name, "| type:", typeof name);
+    console.log("    description:", description, "| type:", typeof description);
+    console.log("    slug:", slug, "| type:", typeof slug);
+    console.log("    parent_id:", parent_id, "| type:", typeof parent_id);
+    
+    if (!name || name.trim() === "") {
+      if (req.file) fs.unlink(req.file.path, (err) => {});
       return res.status(400).json({ error: "Category name is required" });
     }
 
-    // Generate slug if not provided
-    const categorySlug = slug || name.toLowerCase().replace(/\s+/g, '-');
-
-    // Store filename if image was uploaded
+    let imagePath = null;
     if (req.file) {
       imagePath = req.file.filename;
+      console.log("[3] Image uploaded:", imagePath);
     }
 
+    const categorySlug = slug || name.toLowerCase().replace(/\s+/g, '-');
+    console.log("[4] Category slug:", categorySlug);
+
+    // Handle parent_id - convert to number or null
+    let parentIdValue = null;
+    if (parent_id && parent_id !== "" && parent_id !== "null") {
+      parentIdValue = parseInt(parent_id, 10);
+      console.log("[5] Parent ID conversion: original:", parent_id, "-> converted:", parentIdValue);
+      
+      // Validate parent exists
+      const [parentCheck] = await db.query(
+        "SELECT id FROM categories WHERE id = ?",
+        [parentIdValue]
+      );
+      
+      if (parentCheck.length === 0) {
+        if (req.file) fs.unlink(req.file.path, (err) => {});
+        console.error("[5] Parent category not found:", parentIdValue);
+        return res.status(400).json({ error: "Parent category not found" });
+      }
+      console.log("[5] Parent category exists: ID", parentIdValue);
+    } else {
+      console.log("[5] No parent_id provided, setting to NULL");
+    }
+
+    console.log("[6] Inserting into database:");
+    console.log("    Values: [name:", name, ", description:", description, ", image:", imagePath, ", slug:", categorySlug, ", parent_id:", parentIdValue, "]");
+    
     const [result] = await db.query(
-      "INSERT INTO categories (name, description, image, slug) VALUES (?, ?, ?, ?)",
-      [name, description || null, imagePath || null, categorySlug]
+      "INSERT INTO categories (name, description, image, slug, parent_id) VALUES (?, ?, ?, ?, ?)",
+      [name, description || null, imagePath || null, categorySlug, parentIdValue]
     );
+
+    console.log("[7] Category inserted successfully!");
+    console.log("    ID:", result.insertId);
+    console.log("    parent_id:", parentIdValue);
+    console.log("=====================================\n");
 
     res.status(201).json({
       success: true,
@@ -142,17 +196,16 @@ router.post("/", authenticate, upload.single("image"), async (req, res) => {
       category: {
         id: result.insertId,
         name,
-        description,
+        description: description || null,
         image: imagePath,
-        slug: categorySlug
+        slug: categorySlug,
+        parent_id: parentIdValue
       }
     });
   } catch (err) {
-    console.error("Create category error:", err);
+    console.error("[ERROR] Create category error:", err);
     if (req.file) {
-      fs.unlink(req.file.path, (error) => {
-        if (error) console.error("Error deleting file:", error);
-      });
+      fs.unlink(req.file.path, (error) => {});
     }
     if (err.code === "ER_DUP_ENTRY") {
       return res.status(409).json({ error: "Category already exists" });
@@ -164,49 +217,84 @@ router.post("/", authenticate, upload.single("image"), async (req, res) => {
 // Update category (admin only)
 router.put("/:id", authenticate, upload.single("image"), async (req, res) => {
   try {
+    console.log("\n========== UPDATE CATEGORY ==========");
+    console.log("[1] req.body RECEIVED:", req.body);
+    console.log("[1] Category ID:", req.params.id);
+    
     const { id } = req.params;
-    const { name, description, slug } = req.body;
+    let { name, description, slug, parent_id } = req.body;
 
-    // Check if category exists
-    const [categories] = await db.query("SELECT id, image FROM categories WHERE id = ?", [id]);
+    const [categories] = await db.query(
+      "SELECT id, image FROM categories WHERE id = ?",
+      [id]
+    );
+    
     if (categories.length === 0) {
-      if (req.file) {
-        fs.unlink(req.file.path, (err) => {
-          if (err) console.error("Error deleting file:", err);
-        });
-      }
+      if (req.file) fs.unlink(req.file.path, (err) => {});
       return res.status(404).json({ error: "Category not found" });
     }
 
-    const categorySlug = slug || (name ? name.toLowerCase().replace(/\s+/g, '-') : null);
-    let imagePath = categories[0].image; // Keep existing image by default
+    console.log("[2] Extracted fields:");
+    console.log("    parent_id:", parent_id, "| type:", typeof parent_id);
 
-    // If new image is uploaded, delete old one and use new one
+    // Handle parent_id
+    let parentIdValue = null;
+    if (parent_id && parent_id !== "" && parent_id !== "null") {
+      parentIdValue = parseInt(parent_id, 10);
+      console.log("[3] Parent ID conversion: original:", parent_id, "-> converted:", parentIdValue);
+      
+      if (parentIdValue === parseInt(id, 10)) {
+        if (req.file) fs.unlink(req.file.path, (err) => {});
+        return res.status(400).json({ error: "A category cannot be its own parent" });
+      }
+
+      const [parentCheck] = await db.query(
+        "SELECT id FROM categories WHERE id = ?",
+        [parentIdValue]
+      );
+      
+      if (parentCheck.length === 0) {
+        if (req.file) fs.unlink(req.file.path, (err) => {});
+        return res.status(400).json({ error: "Parent category not found" });
+      }
+
+      const isCircular = await hasCircularParent(id, parentIdValue);
+      if (isCircular) {
+        if (req.file) fs.unlink(req.file.path, (err) => {});
+        return res.status(400).json({ error: "Cannot set parent: would create circular relationship" });
+      }
+    } else {
+      console.log("[3] No parent_id provided, setting to NULL");
+    }
+
+    const categorySlug = slug || (name ? name.toLowerCase().replace(/\s+/g, '-') : null);
+    let imagePath = categories[0].image;
+
     if (req.file) {
       if (categories[0].image) {
         const oldImagePath = path.join(__dirname, "../../public/uploads", categories[0].image);
-        fs.unlink(oldImagePath, (err) => {
-          if (err) console.error("Error deleting old image:", err);
-        });
+        fs.unlink(oldImagePath, (err) => {});
       }
       imagePath = req.file.filename;
     }
 
+    console.log("[4] Updating with parent_id:", parentIdValue);
     await db.query(
-      "UPDATE categories SET name = ?, description = ?, image = ?, slug = ? WHERE id = ?",
-      [name || null, description || null, imagePath, categorySlug, id]
+      "UPDATE categories SET name = ?, description = ?, image = ?, slug = ?, parent_id = ? WHERE id = ?",
+      [name || null, description || null, imagePath, categorySlug, parentIdValue, id]
     );
+
+    console.log("[5] Category updated successfully!");
+    console.log("=====================================\n");
 
     res.json({
       success: true,
       message: "Category updated"
     });
   } catch (err) {
-    console.error("Update category error:", err);
+    console.error("[ERROR] Update category error:", err);
     if (req.file) {
-      fs.unlink(req.file.path, (error) => {
-        if (error) console.error("Error deleting file:", error);
-      });
+      fs.unlink(req.file.path, (error) => {});
     }
     if (err.code === "ER_DUP_ENTRY") {
       return res.status(409).json({ error: "Category name or slug already exists" });
@@ -220,24 +308,22 @@ router.delete("/:id", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Check if category exists
-    const [categories] = await db.query("SELECT id, image FROM categories WHERE id = ?", [id]);
+    const [categories] = await db.query(
+      "SELECT id, image FROM categories WHERE id = ?",
+      [id]
+    );
+    
     if (categories.length === 0) {
       return res.status(404).json({ error: "Category not found" });
     }
 
-    // Delete the image file if exists
     if (categories[0].image) {
       const imagePath = path.join(__dirname, "../../public/uploads", categories[0].image);
-      fs.unlink(imagePath, (err) => {
-        if (err) console.error("Error deleting image file:", err);
-      });
+      fs.unlink(imagePath, (err) => {});
     }
 
-    // Set category_id to NULL for products in this category
     await db.query("UPDATE products SET category_id = NULL WHERE category_id = ?", [id]);
-
-    // Delete category
+    await db.query("UPDATE categories SET parent_id = NULL WHERE parent_id = ?", [id]);
     await db.query("DELETE FROM categories WHERE id = ?", [id]);
 
     res.json({

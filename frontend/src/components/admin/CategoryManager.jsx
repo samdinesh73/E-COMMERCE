@@ -17,6 +17,7 @@ export default function CategoryManager() {
     description: "",
     slug: "",
     image: null,
+    parent_id: null,
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState(null);
@@ -68,9 +69,16 @@ export default function CategoryManager() {
     try {
       // Create FormData for multipart/form-data
       const submitData = new FormData();
-      submitData.append("name", formData.name);
-      submitData.append("description", formData.description);
-      submitData.append("slug", formData.slug);
+      submitData.append("name", formData.name.trim());
+      submitData.append("description", formData.description || "");
+      submitData.append("slug", formData.slug || "");
+      
+      // IMPORTANT: Always append parent_id - even if null/empty
+      // The backend will handle conversion
+      if (formData.parent_id && formData.parent_id !== "") {
+        submitData.append("parent_id", String(formData.parent_id));
+      }
+      
       if (formData.image && typeof formData.image === "object") {
         submitData.append("image", formData.image);
       }
@@ -82,7 +90,9 @@ export default function CategoryManager() {
         await categoryService.create(submitData, token);
         setSuccess("Category created successfully");
       }
-      setFormData({ name: "", description: "", slug: "", image: null });
+      
+      // Reset form
+      setFormData({ name: "", description: "", slug: "", image: null, parent_id: null });
       setImagePreview(null);
       setEditingId(null);
       setShowForm(false);
@@ -99,6 +109,7 @@ export default function CategoryManager() {
       description: category.description || "",
       slug: category.slug || "",
       image: null,
+      parent_id: category.parent_id || null,
     });
     setImagePreview(category.image ? getBackendImageUrl(category.image) : null);
     setEditingId(category.id);
@@ -119,7 +130,7 @@ export default function CategoryManager() {
   };
 
   const handleCancel = () => {
-    setFormData({ name: "", description: "", slug: "", image: null });
+    setFormData({ name: "", description: "", slug: "", image: null, parent_id: null });
     setImagePreview(null);
     setEditingId(null);
     setShowForm(false);
@@ -153,6 +164,12 @@ export default function CategoryManager() {
     setSelectedCategory(null);
     setCategoryProducts([]);
     setSelectedProduct(null);
+  };
+
+  const getParentCategoryName = (parentId) => {
+    if (!parentId) return null;
+    const parent = categories.find((c) => c.id === parentId);
+    return parent?.name;
   };
 
   return (
@@ -216,6 +233,32 @@ export default function CategoryManager() {
                   placeholder="e.g., electronics"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Parent Category (Optional - for subcategories)
+                </label>
+                <select
+                  value={formData.parent_id ? String(formData.parent_id) : ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ 
+                      ...formData, 
+                      parent_id: value ? parseInt(value, 10) : null 
+                    });
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                >
+                  <option value="">-- No Parent (Top-level Category) --</option>
+                  {categories
+                    .filter((c) => c.id !== editingId)
+                    .map((c) => (
+                      <option key={c.id} value={String(c.id)}>
+                        {c.name}
+                      </option>
+                    ))}
+                </select>
               </div>
             </div>
 
@@ -309,7 +352,7 @@ export default function CategoryManager() {
                   Name
                 </th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-900">
-                  Slug
+                  Parent Category
                 </th>
                 <th className="text-center py-3 px-4 font-semibold text-gray-900">
                   Products
@@ -345,7 +388,13 @@ export default function CategoryManager() {
                     </span>
                   </td>
                   <td className="py-3 px-4 text-gray-600 text-sm">
-                    {category.slug}
+                    {category.parent_id ? (
+                      <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                        {getParentCategoryName(category.parent_id) || `ID: ${category.parent_id}`}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
                   </td>
                   <td className="py-3 px-4 text-center">
                     <span className="inline-flex items-center justify-center px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
@@ -385,7 +434,6 @@ export default function CategoryManager() {
       {selectedCategory && !selectedProduct && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-96 overflow-hidden flex flex-col">
-            {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">
@@ -403,7 +451,6 @@ export default function CategoryManager() {
               </button>
             </div>
 
-            {/* Content */}
             <div className="overflow-y-auto flex-1">
               {productsLoading ? (
                 <div className="flex items-center justify-center py-12">
@@ -450,7 +497,6 @@ export default function CategoryManager() {
       {selectedProduct && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-96 overflow-y-auto">
-            {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white">
               <h3 className="text-xl font-bold text-gray-900">Product Details</h3>
               <button
@@ -461,10 +507,8 @@ export default function CategoryManager() {
               </button>
             </div>
 
-            {/* Content */}
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Image */}
                 <div>
                   {selectedProduct.image ? (
                     <img
@@ -479,7 +523,6 @@ export default function CategoryManager() {
                   )}
                 </div>
 
-                {/* Details */}
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm font-medium text-gray-600">Product Name</label>
@@ -505,7 +548,6 @@ export default function CategoryManager() {
                 </div>
               </div>
 
-              {/* Description */}
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <label className="text-sm font-medium text-gray-600">Description</label>
                 <p className="text-gray-700 text-sm mt-2 whitespace-pre-wrap">
@@ -513,19 +555,12 @@ export default function CategoryManager() {
                 </p>
               </div>
 
-              {/* Close Button */}
               <div className="mt-6 flex gap-2">
                 <button
                   onClick={() => setSelectedProduct(null)}
                   className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                 >
                   Close
-                </button>
-                <button
-                  onClick={() => setSelectedProduct(null)}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  Back to Products
                 </button>
               </div>
             </div>
@@ -535,4 +570,3 @@ export default function CategoryManager() {
     </div>
   );
 }
-

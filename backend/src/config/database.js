@@ -107,10 +107,42 @@ const ensurePhoneColumn = () => {
   });
 };
 
+// Ensure parent_id column exists in categories table for subcategories feature
+const ensureParentIdColumn = () => {
+  const checkSql = `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'categories' AND COLUMN_NAME = 'parent_id'`;
+  db.query(checkSql, [dbName], (err, results) => {
+    if (err) {
+      console.error("Error checking parent_id column:", err.message);
+      return;
+    }
+    if (results.length === 0) {
+      console.log("'parent_id' column missing in categories table -> adding it...");
+      db.query("ALTER TABLE categories ADD COLUMN parent_id INT DEFAULT NULL", (alterErr) => {
+        if (alterErr) {
+          console.error("Failed to add 'parent_id' column:", alterErr.message);
+        } else {
+          console.log("✅ Added 'parent_id' column to categories table.");
+          // Add foreign key constraint
+          db.query("ALTER TABLE categories ADD CONSTRAINT fk_parent_id FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL", (fkErr) => {
+            if (fkErr) {
+              console.error("Error adding foreign key constraint:", fkErr.message);
+            } else {
+              console.log("✅ Added foreign key constraint for parent_id.");
+            }
+          });
+        }
+      });
+    } else {
+      console.log("✅ parent_id column already exists in categories table.");
+    }
+  });
+};
+
 // Run checks after a short delay to allow schema availability on startup.
 setTimeout(ensureDescriptionColumn, 500);
 setTimeout(ensureProductImagesTable, 1000);
 setTimeout(ensurePhoneColumn, 1500);
+setTimeout(ensureParentIdColumn, 2000);
 
 // Export promise-based connection
 module.exports = dbPromise;

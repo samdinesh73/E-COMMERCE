@@ -8,11 +8,13 @@ export default function ProductList({
   searchTerm = "",
   selectedCategories = [],
   priceRange = { min: 0, max: Infinity },
+  selectedVariations = {},
 }) {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [productVariations, setProductVariations] = useState({});
 
   // Fetch all products
   useEffect(() => {
@@ -22,6 +24,27 @@ export default function ProductList({
         const response = await axios.get(`${API_BASE_URL}/products`);
         setProducts(response.data);
         setError(null);
+        
+        // Fetch variations for each product
+        const variationsMap = {};
+        for (const product of response.data) {
+          try {
+            const variationResponse = await axios.get(
+              `${API_BASE_URL}/variations/${product.id}`
+            );
+            // Handle both array response and object response
+            const variationData = Array.isArray(variationResponse.data) 
+              ? variationResponse.data 
+              : (variationResponse.data.variations || []);
+            
+            if (Array.isArray(variationData) && variationData.length > 0) {
+              variationsMap[product.id] = variationData;
+            }
+          } catch (err) {
+            console.error(`Error fetching variations for product ${product.id}:`, err);
+          }
+        }
+        setProductVariations(variationsMap);
       } catch (err) {
         console.error("Error fetching products:", err);
         setError("Failed to load products");
@@ -32,6 +55,27 @@ export default function ProductList({
 
     fetchProducts();
   }, []);
+
+  // Check if product matches selected variations
+  const matchesVariationFilter = (productId) => {
+    const hasVariationFilter = Object.keys(selectedVariations).length > 0;
+    if (!hasVariationFilter) return true;
+
+    const variations = productVariations[productId] || [];
+    
+    // Check if product has any of the selected variations
+    for (const [variationType, selectedValues] of Object.entries(selectedVariations)) {
+      const hasMatchingVariation = variations.some(
+        (variation) =>
+          variation.variation_type === variationType &&
+          selectedValues.includes(variation.variation_value)
+      );
+      
+      if (!hasMatchingVariation) return false;
+    }
+    
+    return true;
+  };
 
   // Apply filters
   useEffect(() => {
@@ -48,7 +92,7 @@ export default function ProductList({
           product.description?.toLowerCase().includes(term) ||
           product.category_name?.toLowerCase().includes(term) ||
           product.price.toString().includes(term) ||
-          (!isNaN(searchNumber) && product.price <= searchNumber) // Show prices up to search number
+          (!isNaN(searchNumber) && product.price <= searchNumber)
       );
     }
 
@@ -65,8 +109,11 @@ export default function ProductList({
         product.price >= priceRange.min && product.price <= priceRange.max
     );
 
+    // Filter by variations
+    filtered = filtered.filter((product) => matchesVariationFilter(product.id));
+
     setFilteredProducts(filtered);
-  }, [products, searchTerm, selectedCategories, priceRange]);
+  }, [products, searchTerm, selectedCategories, priceRange, selectedVariations, productVariations]);
 
   return (
     <section id="products" className="w-full">
@@ -89,7 +136,7 @@ export default function ProductList({
         <div className="text-center py-24">
           <p className="text-lg text-gray-600 font-medium">No products found</p>
           <p className="text-sm text-gray-500 mt-2">
-            {searchTerm || selectedCategories.length > 0 || priceRange.max !== Infinity
+            {searchTerm || selectedCategories.length > 0 || priceRange.max !== Infinity || Object.keys(selectedVariations).length > 0
               ? "Try adjusting your filters"
               : "Check back soon for new items"}
           </p>

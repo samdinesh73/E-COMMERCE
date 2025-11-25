@@ -17,6 +17,8 @@ import {
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [showHeader, setShowHeader] = React.useState(true);
+  const [isDesktop, setIsDesktop] = React.useState(typeof window !== "undefined" ? window.innerWidth >= 768 : true);
   const location = useLocation();
   const cart = useCart();
   const { user, logout } = useAuth();
@@ -38,37 +40,72 @@ export default function Navbar() {
 
   const isActive = (path) => location.pathname === path;
 
+  React.useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+      if (window.innerWidth < 768) setShowHeader(true);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  React.useEffect(() => {
+    if (!isDesktop) return;
+
+    const lastY = { value: window.scrollY };
+
+    const onScroll = () => {
+      const currentY = window.scrollY;
+      if (currentY > lastY.value && currentY > 50) {
+        setShowHeader(false);
+      } else {
+        setShowHeader(true);
+      }
+      lastY.value = currentY;
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [isDesktop]);
+
   return (
     <>
-      {/* Desktop Navbar */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 hidden md:block">
+      {/* Desktop Navbar (glassmorphism header) */}
+      <nav
+        className={`fixed top-4 left-0 right-0 z-50 hidden md:block pointer-events-auto transform transition-all duration-300 ${
+          showHeader ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-6 pointer-events-none"
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center justify-between h-16 bg-white/10 backdrop-blur-md border border-white/20 shadow-md rounded-full px-6 py-2">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center font-bold text-white group-hover:shadow-lg transition-all duration-300">
+            { /* <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center font-bold text-white group-hover:shadow-lg transition-all duration-300">
                 S
               </div>
               <span className="text-2xl font-black text-black tracking-tight group-hover:text-gray-700 transition-colors duration-300">
                 Sellerrocket
-              </span>
+              </span>*/}
+              <img src="./assets/img/pixelcut-export.png" alt="" className="h-20 w-auto object-contain" />
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-1">
-              <Link to="/" className="px-4 py-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-all duration-300 font-medium text-sm flex items-center gap-2">
-                <Home className="h-4 w-4" />
-                Home
-              </Link>
-              <Link to="/shop" className="px-4 py-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-all duration-300 font-medium text-sm flex items-center gap-2">
-                <ShoppingBag className="h-4 w-4" />
-                Shop
-              </Link>
-              {user?.role === "admin" && (
-                <Link to="/admin" className="px-4 py-2 text-black hover:bg-gray-100 rounded-lg transition-all duration-300 font-bold text-sm flex items-center gap-2 border border-gray-300">
-                  ⚙️ Admin
+            {/* Centered Navigation Links (glass header) */}
+            <div className="flex-1 flex items-center justify-center">
+              <div className="flex items-center gap-1">
+                <Link to="/" className="px-4 py-2 text-gray-700 hover:text-black hover:bg-gray-100/40 rounded-lg transition-all duration-300 font-medium text-sm flex items-center gap-2">
+                  <Home className="h-4 w-4" />
+                  Home
                 </Link>
-              )}
+                <Link to="/shop" className="px-4 py-2 text-gray-700 hover:text-black hover:bg-gray-100/40 rounded-lg transition-all duration-300 font-medium text-sm flex items-center gap-2">
+                  <ShoppingBag className="h-4 w-4" />
+                  Shop
+                </Link>
+                {user?.role === "admin" && (
+                  <Link to="/admin" className="px-4 py-2 text-black hover:bg-gray-100/40 rounded-lg transition-all duration-300 font-bold text-sm flex items-center gap-2 border border-gray-300/20">
+                    ⚙️ Admin
+                  </Link>
+                )}
+              </div>
             </div>
 
             {/* Right Section: Cart & Auth */}

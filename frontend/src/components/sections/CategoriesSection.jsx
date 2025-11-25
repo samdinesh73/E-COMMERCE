@@ -16,7 +16,7 @@ export default function CategoriesSection() {
     try {
       setLoading(true);
       const res = await categoryService.getAll();
-      setCategories(res.data.categories.slice(0, 6)); // Show first 6 categories
+      setCategories(res.data.categories.slice(0, 4)); // Show first 4 categories for banner layout
     } catch (err) {
       console.error("Error fetching categories:", err);
     } finally {
@@ -48,39 +48,47 @@ export default function CategoriesSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {categories.map((category) => (
             <Link
               key={category.id}
               to={`/category/${category.slug}`}
               className="group"
             >
-              <div className="relative h-24 sm:h-40 lg:h-48 bg-gray-100 rounded-lg overflow-hidden mb-1 sm:mb-3 border border-gray-200 hover:border-blue-300 transition-all">
-                {category.image ? (
-                  <img
-                    src={getBackendImageUrl(category.image)}
-                    alt={category.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    onError={(e) => {
-                      e.target.src = "assets/img/placeholder.jpg";
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-50">
-                    <span className="text-gray-400 text-xs sm:text-sm font-medium text-center px-2">
-                      {category.name}
-                    </span>
+              <div className="relative overflow-hidden rounded-2xl h-56 sm:h-72 md:h-64 lg:h-72 flex items-center bg-gradient-to-br from-gray-800 to-black">
+                {/* Left text */}
+                <div className="z-20 p-6 sm:p-8 md:p-10 w-1/2">
+                  <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight">
+                    {category.name}
+                  </h3>
+                  <div className="mt-6 text-sm text-white/80 flex items-center gap-2 font-medium">
+                    <span className="inline-block">Learn more</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-90">
+                      <path d="M5 12h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M12 5l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                   </div>
-                )}
+                </div>
+
+                {/* Right image */}
+                <div className="absolute right-0 top-0 h-full w-1/2">
+                  {category.image ? (
+                    <img
+                      src={getBackendImageUrl(category.image)}
+                      alt={category.name}
+                      className="w-full h-full object-cover object-right-top"
+                      onError={(e) => {
+                        e.target.src = "assets/img/placeholder.jpg";
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200" />
+                  )}
+                </div>
+
+                {/* Soft gradient overlay to separate text */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent" />
               </div>
-              <h3 className="font-semibold text-gray-900 text-xs sm:text-sm lg:text-base truncate group-hover:text-blue-600 transition-colors">
-                {category.name}
-              </h3>
-              {category.description && (
-                <p className="text-gray-600 text-xs line-clamp-1 hidden sm:block">
-                  {category.description}
-                </p>
-              )}
             </Link>
           ))}
         </div>
