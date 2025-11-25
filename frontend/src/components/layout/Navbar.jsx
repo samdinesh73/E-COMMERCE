@@ -72,30 +72,30 @@ export default function Navbar() {
             </div>
 
             {/* Right Section: Cart & Auth */}
-            <div className="flex items-center gap-3">
-              {/* Wishlist Button */}
+            <div className="flex items-center gap-4">
+              {/* Wishlist Icon */}
               <Link 
                 to="/wishlist" 
-                className="relative px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-black transition-all duration-300 flex items-center gap-2 group font-medium text-sm"
+                className="relative p-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-all duration-300 group"
+                title="Wishlist"
               >
-                <Heart className="h-5 w-5" />
-                <span className="hidden sm:inline">Wishlist</span>
+                <Heart className="h-6 w-6" />
                 {wishlistCount > 0 && (
-                  <span className="ml-2 bg-black text-white text-xs font-bold px-2.5 py-1 rounded-full group-hover:shadow-lg transition-all duration-300">
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold h-5 w-5 rounded-full flex items-center justify-center">
                     {wishlistCount}
                   </span>
                 )}
               </Link>
 
-              {/* Cart Button */}
+              {/* Cart Icon */}
               <Link 
                 to="/cart" 
-                className="relative px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-black transition-all duration-300 flex items-center gap-2 group font-medium text-sm"
+                className="relative p-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-all duration-300 group"
+                title="Cart"
               >
-                <ShoppingCart className="h-5 w-5" />
-                <span className="hidden sm:inline">Cart</span>
+                <ShoppingCart className="h-6 w-6" />
                 {totalItems > 0 && (
-                  <span className="ml-2 bg-black text-white text-xs font-bold px-2.5 py-1 rounded-full group-hover:shadow-lg transition-all duration-300">
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold h-5 w-5 rounded-full flex items-center justify-center">
                     {totalItems}
                   </span>
                 )}
@@ -110,7 +110,7 @@ export default function Navbar() {
                       <AvatarFallback className="bg-black text-white font-semibold">{getInitials(user.name)}</AvatarFallback>
                     </Avatar>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200">
+                  <DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200 z-[999]">
                     <DropdownMenuLabel className="flex flex-col space-y-1">
                       <p className="text-sm font-semibold text-black leading-none">{user.name}</p>
                       <p className="text-xs leading-none text-gray-600">{user.email}</p>

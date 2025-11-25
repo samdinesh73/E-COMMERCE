@@ -4,6 +4,7 @@ import { getImageUrl } from "../../utils/imageHelper";
 
 export default function ProductImageGallery({ mainImage, additionalImages = [] }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
 
   // Combine main image with additional images
   const allImages = [
@@ -33,18 +34,51 @@ export default function ProductImageGallery({ mainImage, additionalImages = [] }
     );
   };
 
+  const handleTouchStart = (e) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (e) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    if (!touchStart) return;
+    
+    const distance = touchStart - touchEndX;
+    const threshold = 50; // Minimum swipe distance in pixels
+
+    if (Math.abs(distance) < threshold) {
+      setTouchStart(null);
+      return;
+    }
+
+    // Swiped left - show next image
+    if (distance > 0) {
+      handleNext();
+    }
+    // Swiped right - show previous image
+    else {
+      handlePrevious();
+    }
+
+    setTouchStart(null);
+  };
+
   return (
     <div className="flex flex-col gap-4">
       {/* Main Image Display */}
-      <div className="relative w-full bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-8 border border-gray-100">
-        <div className="aspect-square flex items-center justify-center rounded-lg overflow-hidden ">
+      <div className="relative w-full bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-8 border border-gray-100"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        style={{ cursor: 'grab' }}
+      >
+        <div className="aspect-square flex items-center justify-center rounded-lg overflow-hidden">
           <img
             src={getImageUrl(currentImage.path)}
             alt={currentImage.angle}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain select-none"
             onError={(e) => {
               e.target.src = "assets/img/placeholder.png";
             }}
+            draggable="false"
           />
         </div>
 
@@ -78,6 +112,13 @@ export default function ProductImageGallery({ mainImage, additionalImages = [] }
         <div className="absolute top-4 left-4 px-3 py-1 bg-blue-600 text-white text-xs sm:text-sm rounded-full font-medium">
           {currentImage.angle}
         </div>
+
+        {/* Touch swipe indicator - only on mobile */}
+        {allImages.length > 1 && (
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 sm:hidden text-white text-xs font-medium px-3 py-1 bg-black bg-opacity-40 rounded-full">
+            ← Swipe →
+          </div>
+        )}
       </div>
 
       {/* Thumbnails - Only show if multiple images */}
@@ -108,7 +149,7 @@ export default function ProductImageGallery({ mainImage, additionalImages = [] }
       )}
 
       {/* Image info */}
-      {allImages.length > 1 && (
+      {/* {allImages.length > 1 && (
         <div className="text-center text-xs sm:text-sm text-gray-600">
           <p>
             <span className="font-semibold text-gray-900">
@@ -117,7 +158,7 @@ export default function ProductImageGallery({ mainImage, additionalImages = [] }
             {" available - Click arrows or thumbnails to view"}
           </p>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

@@ -1,0 +1,342 @@
+import React, { useState, useEffect } from "react";
+import { X, ShoppingCart, Minus, Plus } from "lucide-react";
+import { API_BASE_URL } from "../../constants/config";
+import { getImageUrl } from "../../utils/imageHelper";
+import "./CartDrawer.css";
+
+export default function CartDrawer({ isOpen, onClose, product, onAddToCart }) {
+  const [quantity, setQuantity] = useState(1);
+  const [selectedVariations, setSelectedVariations] = useState({});
+  const [variations, setVariations] = useState([]);
+  const [isAdding, setIsAdding] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && product) {
+      fetchVariations(product.id);
+      setQuantity(1);
+      setSelectedVariations({});
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen, product]);
+
+  const fetchVariations = async (productId) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/variations/${productId}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setVariations(data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching variations:", err);
+    }
+  };
+
+  const groupedVariations = variations.reduce((acc, variation) => {
+    if (!acc[variation.variation_type]) {
+      acc[variation.variation_type] = [];
+    }
+    acc[variation.variation_type].push(variation);
+    return acc;
+  }, {});
+
+  const handleAddToCart = () => {
+    setIsAdding(true);
+    setShowSuccess(true);
+    onAddToCart(product, quantity, selectedVariations);
+    setTimeout(() => {
+      setIsAdding(false);
+      setShowSuccess(false);
+      onClose();
+      setQuantity(1);
+      setSelectedVariations({});
+    }, 2500);
+  };
+
+  const handleVariationSelect = (type, variation) => {
+    setSelectedVariations((prev) => {
+      const newSelection = { ...prev };
+      if (newSelection[type]?.id === variation.id) {
+        delete newSelection[type];
+      } else {
+        newSelection[type] = variation;
+      }
+      return newSelection;
+    });
+  };
+
+  if (!isOpen || !product) return null;
+
+  return (
+    <>
+      {/* Overlay */}
+      <div
+        className={`fixed inset-0 bg-black z-40 transition-opacity duration-300 ${
+          isOpen ? "bg-opacity-50" : "bg-opacity-0 pointer-events-none"
+        }`}
+        onClick={onClose}
+      />
+
+      {/* Drawer - Slide from Bottom on Mobile and Desktop */}
+      <div
+        className={`fixed bottom-0 left-0 right-0 bg-white shadow-2xl z-50 overflow-hidden rounded-t-2xl transition-transform duration-500 ease-out transform ${
+          isOpen ? "translate-y-0" : "translate-y-full"
+        }`}
+        style={{ height: "65vh" }}
+      >
+        {/* Handle Bar */}
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="w-12 h-1 bg-gray-300 rounded-full" />
+        </div>
+
+        {/* Header */}
+        <div className="px-4 py-2 flex items-center justify-between border-b border-gray-200">
+          <h2 className="text-lg font-bold text-gray-900">Add to Cart</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="h-5 w-5 text-gray-600" />
+          </button>
+        </div>
+
+        {/* Main Layout - Flexbox */}
+        <div className="flex flex-col h-full mx-auto max-w-2xl" style={{ height: "calc(65vh - 80px)" }}>
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto flex-1 px-4 py-3 space-y-3">
+            {/* Product Info with Image */}
+            <div className="flex gap-3 pb-3 border-b border-gray-200">
+              {/* Product Image */}
+              <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                <img
+                  src={getImageUrl(product.image)}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.src = "assets/img/placeholder.png";
+                  }}
+                />
+              </div>
+
+              {/* Product Details */}
+              <div className="flex-1 space-y-1 flex flex-col justify-center">
+                <h3 className="text-sm font-bold text-gray-900 line-clamp-2">
+                  {product.name}
+                </h3>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-lg font-bold text-black">
+                    ₹{Math.round(product.price)}
+                  </span>
+                  <span className="text-xs text-gray-500 line-through">
+                    ₹{Math.round(product.price * 1.2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Variations */}
+            {Object.keys(groupedVariations).length > 0 && (
+              <div className="bg-gray-50 rounded-xl p-4 space-y-4 border border-gray-200">
+                <h4 className="text-sm font-bold text-gray-900 tracking-wide">SELECT OPTIONS</h4>
+                {Object.entries(groupedVariations).map(([type, typeVariations]) => {
+                  const isColorType = type.toLowerCase() === "color";
+                  const selectedForType = selectedVariations[type];
+
+                  return (
+                    <div key={type} className="space-y-2.5">
+                      <label className="text-xs font-semibold text-gray-800 uppercase tracking-wider block">
+                        {type}
+                      </label>
+                      {isColorType ? (
+                        // Color variations as image thumbnails
+                        <div className="flex flex-wrap gap-2.5">
+                          {typeVariations.map((variation) => (
+                            <button
+                              key={variation.id}
+                              onClick={() =>
+                                handleVariationSelect(type, variation)
+                              }
+                              className={`relative group transition-all duration-300 transform hover:scale-110 ${
+                                selectedForType?.id === variation.id
+                                  ? "ring-2 ring-offset-2 ring-black shadow-lg"
+                                  : "hover:ring-2 hover:ring-offset-2 hover:ring-gray-400 shadow-sm hover:shadow-md"
+                              }`}
+                              title={variation.variation_value}
+                            >
+                              {variation.images &&
+                              variation.images.length > 0 ? (
+                                <img
+                                  src={`${API_BASE_URL}/${variation.images[0].image_path}`}
+                                  alt={variation.variation_value}
+                                  className="h-14 w-14 rounded-xl object-cover border-2 border-gray-200"
+                                />
+                              ) : (
+                                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center border-2 border-gray-200 text-xs font-bold text-white">
+                                  {variation.variation_value}
+                                </div>
+                              )}
+                              <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs font-semibold text-gray-700 whitespace-nowrap mt-1">
+                                {variation.variation_value}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        // Size or other variations as buttons
+                        <div className="flex flex-wrap gap-2">
+                          {typeVariations.map((variation) => (
+                            <button
+                              key={variation.id}
+                              onClick={() =>
+                                handleVariationSelect(type, variation)
+                              }
+                              className={`px-4 py-2.5 rounded-xl font-bold transition-all duration-300 text-xs uppercase tracking-wide border-2 transform hover:scale-105 ${
+                                selectedForType?.id === variation.id
+                                  ? "bg-black text-white border-black shadow-lg"
+                                  : "bg-white text-gray-900 border-gray-300 hover:border-black shadow-sm hover:shadow-md"
+                              }`}
+                            >
+                              {variation.variation_value}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Quantity Selector */}
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-gray-900 uppercase tracking-wider block">
+                Quantity
+              </label>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full transition-all duration-300 text-gray-600 hover:text-gray-900 border border-gray-200"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <input
+                  type="number"
+                  value={quantity}
+                  onChange={(e) =>
+                    setQuantity(Math.max(1, parseInt(e.target.value) || 1))
+                  }
+                  className="w-12 text-center font-semibold text-gray-900 focus:outline-none text-base bg-transparent border-b-2 border-gray-300 focus:border-black transition-colors"
+                  style={{
+                    textAlign: 'center',
+                  }}
+                  min="1"
+                />
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full transition-all duration-300 text-gray-600 hover:text-gray-900 border border-gray-200"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Stock Info */}
+            <div className="p-2 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-900">
+                ✓ In Stock - Free delivery above ₹500
+              </p>
+            </div>
+          </div>
+
+          {/* Footer - Always Visible */}
+          <div className="bg-white border-t border-gray-200 p-3 space-y-2 flex-shrink-0">
+          <button
+            onClick={handleAddToCart}
+            disabled={isAdding}
+            className="w-full px-3 py-2.5 bg-black text-white font-semibold text-sm rounded-lg hover:bg-gray-900 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            {isAdding ? "Adding..." : "Add to Cart"}
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full px-3 py-2 bg-gray-100 text-gray-900 font-semibold text-xs rounded-lg hover:bg-gray-200 transition-all"
+          >
+            Continue Shopping
+          </button>
+        </div>
+        </div>
+      </div>
+
+      {/* Success Popup */}
+      {showSuccess && (
+        <div className="fixed inset-0 flex items-center justify-center z-[999]">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+
+          {/* Confetti Background */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="confetti-container">
+              {[...Array(30)].map((_, i) => (
+                <div
+                  key={i}
+                  className="confetti"
+                  style={{
+                    left: Math.random() * 100 + '%',
+                    delay: Math.random() * 0.5 + 's',
+                    '--duration': (Math.random() * 1.5 + 1.5) + 's',
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Success Card */}
+          <div className="relative z-10 bg-white rounded-2xl p-8 shadow-2xl max-w-sm text-center animate-popup-appear">
+            {/* Coin/Trophy Icon */}
+            <div className="flex justify-center mb-6">
+              <div className="relative">
+                <div className="w-20 h-20 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center animate-bounce-gentle shadow-lg">
+                  <span className="text-4xl">🎉</span>
+                </div>
+                {/* Shine effect */}
+                <div className="absolute inset-0 bg-white rounded-full opacity-20 blur-md"></div>
+              </div>
+            </div>
+
+            {/* Success Message */}
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Product Added!
+            </h2>
+            <p className="text-gray-600 text-sm mb-4">
+              {quantity} × {product.name}
+            </p>
+            
+            {/* Subtext */}
+            <p className="text-xs text-gray-500 mb-6">
+              Item added to your cart successfully
+            </p>
+
+            {/* Action Button */}
+            <button
+              onClick={() => {
+                setShowSuccess(false);
+                onClose();
+              }}
+              className="px-6 py-2.5 bg-black text-white font-semibold rounded-lg hover:bg-gray-900 transition-all text-sm"
+            >
+              Got it, Thanks!
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

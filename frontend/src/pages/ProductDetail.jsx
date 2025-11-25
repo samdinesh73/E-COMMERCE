@@ -3,8 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { productService } from "../services/api";
 import { getImageUrl, getBackendImageUrl } from "../utils/imageHelper";
 import ProductImageGallery from "../components/common/ProductImageGallery";
+import ProductCard from "../components/common/ProductCard";
 import { useCart } from "../context/CartContext";
-import { Heart, ShoppingCart, Truck, Shield, RotateCcw, Loader, AlertCircle } from "lucide-react";
+import { Heart, ShoppingCart, Truck, Shield, RotateCcw, Loader, AlertCircle, ChevronDown } from "lucide-react";
 import axios from "axios";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
@@ -19,6 +20,9 @@ export default function ProductDetail() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [variations, setVariations] = useState([]);
   const [selectedVariations, setSelectedVariations] = useState({}); // Maps variation_type -> selected variation
+  const [expandedAccordion, setExpandedAccordion] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [showSuccess, setShowSuccess] = useState(false);
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -31,6 +35,11 @@ export default function ProductDetail() {
         
         // Fetch variations for this product
         fetchVariations(res.data.id);
+        
+        // Fetch related products from same category
+        if (res.data.category_id) {
+          fetchRelatedProducts(res.data.category_id);
+        }
       } catch (err) {
         console.error("Error fetching product:", err);
         setError("Failed to load product details");
@@ -52,10 +61,29 @@ export default function ProductDetail() {
     }
   };
 
+  const fetchRelatedProducts = async (categoryId) => {
+    try {
+      // Fetch all products from the same category
+      const response = await axios.get(`${API_BASE_URL}/products`);
+      if (response.data) {
+        // Filter products from same category, exclude current product
+        const related = response.data
+          .filter(p => p.category_id === categoryId && p.id !== parseInt(id))
+          .slice(0, 6); // Show up to 6 related products
+        setRelatedProducts(related);
+      }
+    } catch (err) {
+      console.error("Error fetching related products:", err);
+    }
+  };
+
   const handleAddToCart = () => {
     if (!product) return;
+    setShowSuccess(true);
     addToCart(product, Number(quantity || 1), selectedVariations);
-    alert(`Added ${quantity} item(s) to cart`);
+    setTimeout(() => {
+      setShowSuccess(false);
+    }, 2500);
   };
 
   if (loading) {
@@ -106,7 +134,7 @@ export default function ProductDetail() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12">
           {/* Image Section - Using Gallery Component */}
-          <div className="flex items-start justify-center">
+          <div className="flex items-start justify-center lg:sticky lg:top-20 lg:h-fit">
             <div className="w-full">
               {(() => {
                 // Get first selected variation with images
@@ -172,7 +200,7 @@ export default function ProductDetail() {
             {/* Price Section */}
             <div className="mb-6 sm:mb-8">
               <div className="flex items-center gap-3 sm:gap-4 mb-2 flex-wrap">
-                <span className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900">
+                <span className="text-3xl sm:text-4xl lg:text-5xl font-bold text-black">
                   ₹{(() => {
                     const selectedVars = Object.values(selectedVariations);
                     if (selectedVars.length > 0) {
@@ -184,23 +212,16 @@ export default function ProductDetail() {
                     return Math.round(Number(product.price));
                   })()}
                 </span>
-                <span className="inline-block px-2 sm:px-3 py-1 bg-green-100 text-green-700 text-xs sm:text-sm font-semibold rounded-full">
+                <span className="inline-block px-2 sm:px-3 py-1 bg-gray-200 text-gray-900 text-xs sm:text-sm font-semibold rounded-full">
                   In Stock
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-gray-600">Incl. of all taxes</p>
+              <p className="text-xs sm:text-sm text-gray-700">Incl. of all taxes</p>
             </div>
-
-            {/* Description */}
-            {product.description && (
-              <div className="mb-6 sm:mb-8 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <p className="text-gray-700 text-xs sm:text-sm leading-relaxed">{product.description}</p>
-              </div>
-            )}
 
             {/* Variations Section - Grouped by Type */}
             {variations.length > 0 && (
-              <div className="mb-6 sm:mb-8 space-y-4">
+              <div className="mb-6 sm:mb-8 space-y-6">
                 {(() => {
                   // Group variations by type
                   const groupedVariations = {};
@@ -213,40 +234,91 @@ export default function ProductDetail() {
                   
                   return Object.entries(groupedVariations).map(([type, typeVariations]) => {
                     const selectedForType = selectedVariations[type];
+                    const isColorType = type.toLowerCase() === 'color';
                     
                     return (
-                      <div key={type} className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                        <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-3">{type}</h3>
-                        <div className="flex flex-wrap gap-2 sm:gap-3">
-                          {typeVariations.map((variation) => (
-                            <button
-                              key={variation.id}
-                              onClick={() => {
-                                // Toggle: if already selected for this type, deselect; otherwise select
-                                if (selectedForType?.id === variation.id) {
-                                  const newSelections = { ...selectedVariations };
-                                  delete newSelections[type];
-                                  setSelectedVariations(newSelections);
-                                } else {
-                                  setSelectedVariations({
-                                    ...selectedVariations,
-                                    [type]: variation
-                                  });
-                                }
-                              }}
-                              className={`px-3 sm:px-4 py-2 sm:py-2 rounded-lg font-medium transition-all text-xs sm:text-sm ${
-                                selectedForType?.id === variation.id
-                                  ? "bg-blue-600 text-white shadow-md"
-                                  : "bg-white text-gray-900 border border-gray-300 hover:border-blue-400"
-                              }`}
-                            >
-                              {variation.variation_value}
-                              {variation.price_adjustment > 0 && (
-                                <span className="ml-1 text-xs">+₹{variation.price_adjustment}</span>
-                              )}
-                            </button>
-                          ))}
+                      <div key={type}>
+                        <div className="flex items-center justify-between mb-3 sm:mb-4">
+                          <h3 className="text-sm sm:text-base font-bold text-gray-900">Select {type}</h3>
+                          {isColorType && <a href="#size-guide" className="text-xs sm:text-sm text-blue-600 hover:underline font-medium">Size Guide</a>}
                         </div>
+                        
+                        {/* Render based on type */}
+                        {isColorType ? (
+                          // Color variations - Show as image thumbnails
+                          <div className="flex flex-wrap gap-2 sm:gap-3">
+                            {typeVariations.map((variation) => (
+                              <button
+                                key={variation.id}
+                                onClick={() => {
+                                  if (selectedForType?.id === variation.id) {
+                                    const newSelections = { ...selectedVariations };
+                                    delete newSelections[type];
+                                    setSelectedVariations(newSelections);
+                                  } else {
+                                    setSelectedVariations({
+                                      ...selectedVariations,
+                                      [type]: variation
+                                    });
+                                  }
+                                }}
+                                className={`relative group transition-all duration-300 ${
+                                  selectedForType?.id === variation.id ? 'ring-2 ring-offset-2 ring-blue-600' : 'hover:ring-2 hover:ring-offset-2 hover:ring-gray-300'
+                                }`}
+                                title={variation.variation_value}
+                              >
+                                {/* Color image thumbnail */}
+                                {variation.images && variation.images.length > 0 ? (
+                                  <img
+                                    src={`${API_BASE_URL}/${variation.images[0].image_path}`}
+                                    alt={variation.variation_value}
+                                    className="h-20 sm:h-24 w-20 sm:w-24 rounded-lg object-cover border border-gray-300"
+                                  />
+                                ) : (
+                                  <div className="h-20 sm:h-24 w-20 sm:w-24 rounded-lg bg-gray-200 flex items-center justify-center border border-gray-300 text-xs font-semibold text-gray-600">
+                                    {variation.variation_value}
+                                  </div>
+                                )}
+                                
+                                {/* Label below thumbnail */}
+                                <p className="text-xs sm:text-sm font-semibold text-gray-900 text-center mt-2 truncate">
+                                  {variation.variation_value}
+                                </p>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          // Size or other variations - Show as text buttons
+                          <div className="flex flex-wrap gap-2 sm:gap-3">
+                            {typeVariations.map((variation) => (
+                              <button
+                                key={variation.id}
+                                onClick={() => {
+                                  if (selectedForType?.id === variation.id) {
+                                    const newSelections = { ...selectedVariations };
+                                    delete newSelections[type];
+                                    setSelectedVariations(newSelections);
+                                  } else {
+                                    setSelectedVariations({
+                                      ...selectedVariations,
+                                      [type]: variation
+                                    });
+                                  }
+                                }}
+                                className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-semibold transition-all duration-300 text-xs sm:text-sm border-2 ${
+                                  selectedForType?.id === variation.id
+                                    ? "bg-black text-white border-black shadow-md"
+                                    : "bg-white text-gray-900 border-gray-300 hover:border-gray-900"
+                                }`}
+                              >
+                                {variation.variation_value}
+                                {/* {variation.price_adjustment > 0 && (
+                                  <span className="ml-1 text-xs font-normal">+₹{variation.price_adjustment}</span>
+                                )} */}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   });
@@ -255,9 +327,10 @@ export default function ProductDetail() {
             )}
 
             {/* Quantity and Actions */}
-            <div className="mb-6 sm:mb-8 space-y-4">
-              <div>
-                <label className="block text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">Quantity</label>
+            <div className="mb-6 sm:mb-8">
+              <label className="block text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">Quantity</label>
+              <div className="flex items-center gap-3 sm:gap-4">
+                {/* Quantity Selector */}
                 <div className="inline-flex items-center gap-2 sm:gap-3 bg-white border border-gray-300 rounded-lg p-1 sm:p-2">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -279,39 +352,140 @@ export default function ProductDetail() {
                     +
                   </button>
                 </div>
-              </div>
 
-              {/* Main CTA Buttons */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                {/* Add to Cart Button */}
                 <button
                   onClick={handleAddToCart}
-                  className="px-4 sm:px-6 py-3 sm:py-4 bg-blue-600 text-white font-semibold text-sm sm:text-base rounded-lg hover:bg-blue-700 transition-all hover:shadow-lg flex items-center justify-center gap-2"
+                  className="flex-1 px-4 sm:px-6 py-3 sm:py-4 bg-black text-white font-semibold text-sm sm:text-base rounded-lg hover:bg-gray-900 transition-all hover:shadow-lg flex items-center justify-center gap-2"
                 >
                   <ShoppingCart className="h-4 sm:h-5 w-4 sm:w-5" />
                   Add to Cart
                 </button>
-                <button className="px-4 sm:px-6 py-3 sm:py-4 border-2 border-blue-600 text-blue-600 font-semibold text-sm sm:text-base rounded-lg hover:bg-blue-50 transition-colors">
-                  Buy Now
+              </div>
+            </div>
+
+            {/* Product Details Accordion */}
+            <div className="space-y-0 border border-gray-300 rounded-lg divide-y divide-gray-300">
+              {/* Specifications */}
+              <div className="border-b border-gray-300">
+                <button
+                  onClick={() => setExpandedAccordion(expandedAccordion === 'specs' ? null : 'specs')}
+                  className="w-full flex items-center justify-between p-4 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="text-left">
+                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Specifications</h4>
+                    <p className="text-xs sm:text-sm text-gray-700 mt-0.5">Technical details and features</p>
+                  </div>
+                  <ChevronDown 
+                    className={`h-5 w-5 text-gray-900 transition-transform duration-300 flex-shrink-0 ${
+                      expandedAccordion === 'specs' ? 'rotate-180' : ''
+                    }`}
+                  />
                 </button>
+                {expandedAccordion === 'specs' && (
+                  <div className="px-4 pb-4 text-sm sm:text-base text-gray-800 bg-gray-50">
+                    <ul className="space-y-2">
+                      <li><span className="font-medium">Availability:</span> <span className="text-gray-900 font-bold">In Stock</span></li>
+                      <li><span className="font-medium">Product ID:</span> PROD-{product.id}</li>
+                      <li><span className="font-medium">Category:</span> General</li>
+                      <li><span className="font-medium">SKU:</span> {product.id}-{Math.random().toString(36).substr(2, 9).toUpperCase()}</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Description */}
+              <div className="border-b border-gray-300">
+                <button
+                  onClick={() => setExpandedAccordion(expandedAccordion === 'desc' ? null : 'desc')}
+                  className="w-full flex items-center justify-between p-4 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="text-left">
+                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Description</h4>
+                    <p className="text-xs sm:text-sm text-gray-700 mt-0.5">Product overview and details</p>
+                  </div>
+                  <ChevronDown 
+                    className={`h-5 w-5 text-gray-900 transition-transform duration-300 flex-shrink-0 ${
+                      expandedAccordion === 'desc' ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+                {expandedAccordion === 'desc' && (
+                  <div className="px-4 pb-4 text-sm sm:text-base text-gray-800 bg-gray-50">
+                    {product.description || "Premium quality product with excellent features and durability."}
+                  </div>
+                )}
+              </div>
+
+              {/* Returns, Exchange, & Refund Policy */}
+              <div className="border-b border-gray-300">
+                <button
+                  onClick={() => setExpandedAccordion(expandedAccordion === 'policy' ? null : 'policy')}
+                  className="w-full flex items-center justify-between p-4 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="text-left">
+                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Returns, Exchange, & Refund Policy</h4>
+                    <p className="text-xs sm:text-sm text-gray-700 mt-0.5">7 days easy returns and exchange</p>
+                  </div>
+                  <ChevronDown 
+                    className={`h-5 w-5 text-gray-900 transition-transform duration-300 flex-shrink-0 ${
+                      expandedAccordion === 'policy' ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+                {expandedAccordion === 'policy' && (
+                  <div className="px-4 pb-4 text-sm sm:text-base text-gray-800 bg-gray-50 space-y-3">
+                    <p><span className="font-medium">Return Period:</span> 7 days from delivery</p>
+                    <p><span className="font-medium">Condition:</span> Product must be unused and in original packaging</p>
+                    <p><span className="font-medium">Process:</span> Contact support to initiate return/exchange</p>
+                    <p><span className="font-medium">Refund:</span> Refunds processed within 5-7 business days</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Marketed By */}
+              <div>
+                <button
+                  onClick={() => setExpandedAccordion(expandedAccordion === 'seller' ? null : 'seller')}
+                  className="w-full flex items-center justify-between p-4 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="text-left">
+                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Marketed By</h4>
+                    <p className="text-xs sm:text-sm text-gray-700 mt-0.5">Company and distributor information</p>
+                  </div>
+                  <ChevronDown 
+                    className={`h-5 w-5 text-gray-900 transition-transform duration-300 flex-shrink-0 ${
+                      expandedAccordion === 'seller' ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+                {expandedAccordion === 'seller' && (
+                  <div className="px-4 pb-4 text-sm sm:text-base text-gray-800 bg-gray-50 space-y-2">
+                    <p><span className="font-medium">Seller:</span> Sellerocket Store</p>
+                    <p><span className="font-medium">Email:</span> support@sellerocket.com</p>
+                    <p><span className="font-medium">Phone:</span> +91-XXXXXXXXXX</p>
+                    <p><span className="font-medium">Address:</span> Premium Store, Shopping District</p>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg border border-gray-100">
+            <div className="mt-6 sm:mt-8 grid grid-cols-3 gap-2 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg border border-gray-300">
               <div className="text-center">
-                <Truck className="h-5 sm:h-6 w-5 sm:w-6 text-blue-600 mx-auto mb-1 sm:mb-2" />
+                <Truck className="h-5 sm:h-6 w-5 sm:w-6 text-gray-900 mx-auto mb-1 sm:mb-2" />
                 <p className="text-xs font-semibold text-gray-900">Free Delivery</p>
-                <p className="text-xs text-gray-600 hidden sm:block">On orders ₹500+</p>
+                <p className="text-xs text-gray-700 hidden sm:block">On orders ₹500+</p>
               </div>
               <div className="text-center">
-                <RotateCcw className="h-5 sm:h-6 w-5 sm:w-6 text-blue-600 mx-auto mb-1 sm:mb-2" />
+                <RotateCcw className="h-5 sm:h-6 w-5 sm:w-6 text-gray-900 mx-auto mb-1 sm:mb-2" />
                 <p className="text-xs font-semibold text-gray-900">Easy Return</p>
-                <p className="text-xs text-gray-600 hidden sm:block">30-day policy</p>
+                <p className="text-xs text-gray-700 hidden sm:block">30-day policy</p>
               </div>
               <div className="text-center">
-                <Shield className="h-5 sm:h-6 w-5 sm:w-6 text-blue-600 mx-auto mb-1 sm:mb-2" />
+                <Shield className="h-5 sm:h-6 w-5 sm:w-6 text-gray-900 mx-auto mb-1 sm:mb-2" />
                 <p className="text-xs font-semibold text-gray-900">Secure Buy</p>
-                <p className="text-xs text-gray-600 hidden sm:block">100% safe</p>
+                <p className="text-xs text-gray-700 hidden sm:block">100% safe</p>
               </div>
             </div>
           </div>
@@ -402,11 +576,79 @@ export default function ProductDetail() {
       <div className="bg-white border-t border-gray-100 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-8">Related Products</h2>
-          <div className="text-center py-16 bg-gray-50 rounded-xl border border-gray-100">
-            <p className="text-gray-600 font-medium">Related products coming soon...</p>
-          </div>
+          {relatedProducts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {relatedProducts.map((relatedProduct) => (
+                <ProductCard key={relatedProduct.id} product={relatedProduct} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 bg-gray-50 rounded-xl border border-gray-100">
+              <p className="text-gray-600 font-medium">No related products available in this category</p>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Success Popup */}
+      {showSuccess && (
+        <div className="fixed inset-0 flex items-center justify-center z-[999]">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+
+          {/* Confetti Background */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="confetti-container">
+              {[...Array(30)].map((_, i) => (
+                <div
+                  key={i}
+                  className="confetti"
+                  style={{
+                    left: Math.random() * 100 + '%',
+                    delay: Math.random() * 0.5 + 's',
+                    '--duration': (Math.random() * 1.5 + 1.5) + 's',
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Success Card */}
+          <div className="relative z-10 bg-white rounded-2xl p-8 shadow-2xl max-w-sm text-center animate-popup-appear">
+            {/* Celebration Icon */}
+            <div className="flex justify-center mb-6">
+              <div className="relative">
+                <div className="w-20 h-20 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center animate-bounce-gentle shadow-lg">
+                  <span className="text-4xl">🎉</span>
+                </div>
+                {/* Shine effect */}
+                <div className="absolute inset-0 bg-white rounded-full opacity-20 blur-md"></div>
+              </div>
+            </div>
+
+            {/* Success Message */}
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Product Added!
+            </h2>
+            <p className="text-gray-600 text-sm mb-4">
+              {quantity} × {product.name}
+            </p>
+            
+            {/* Subtext */}
+            <p className="text-xs text-gray-500 mb-6">
+              Item added to your cart successfully
+            </p>
+
+            {/* Action Button */}
+            <button
+              onClick={() => setShowSuccess(false)}
+              className="px-6 py-2.5 bg-black text-white font-semibold rounded-lg hover:bg-gray-900 transition-all text-sm"
+            >
+              Got it, Thanks!
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

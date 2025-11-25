@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { getImageUrl } from "../../utils/imageHelper";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
+import CartDrawer from "./CartDrawer";
 import { ShoppingCart, Heart, Star, Zap } from "lucide-react";
 import { API_BASE_URL, ENDPOINTS } from "../../constants/config";
 
@@ -12,6 +13,7 @@ export default function ProductCard({ product }) {
   const isFavorite = isInWishlist(product.id);
   const [secondaryImage, setSecondaryImage] = useState(null);
   const [showSecondary, setShowSecondary] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Fetch additional images on component mount
   useEffect(() => {
@@ -51,12 +53,21 @@ export default function ProductCard({ product }) {
     }
   };
 
+  const handleAddToCartClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDrawerOpen(true);
+  };
+
+  const handleAddToCartFromDrawer = (product, quantity, variations) => {
+    addToCart(product, quantity, variations);
+  };
+
   return (
-    <div className="group bg-white rounded-lg sm:rounded-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col h-full">
+    <div className="group bg-white rounded-lg sm:rounded-xl border border-gray-300 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full">
       {/* Image Container */}
       <div
-        className="relative w-full flex-shrink-0 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 cursor-pointer"
-        style={{ height: '280px' }}
+        className="relative w-full flex-shrink-0 overflow-hidden bg-gray-100 cursor-pointer aspect-[3/4]"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         onMouseEnter={() => setShowSecondary(true)}
         onMouseLeave={() => setShowSecondary(false)}
@@ -66,7 +77,7 @@ export default function ProductCard({ product }) {
           <img
             src={imageUrl}
             alt={product.name}
-            className={`w-full h-full object-cover transition-all duration-500  ${
+            className={`w-full h-full object-cover transition-all duration-300 ${
               showSecondary ? "opacity-0" : "opacity-100"
             }`}
             onError={(e) => {
@@ -79,7 +90,7 @@ export default function ProductCard({ product }) {
             <img
               src={secondaryImageUrl}
               alt={`${product.name} - alternate view`}
-              className={`absolute inset-0 w-full h-full object-cover transition-all duration-500  ${
+              className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 ${
                 showSecondary ? "opacity-100" : "opacity-0"
               }`}
               onError={(e) => {
@@ -89,101 +100,66 @@ export default function ProductCard({ product }) {
           )}
         </Link>
 
-        {/* Badge */}
-        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-blue-600 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-          <Zap className="h-2.5 sm:h-3 w-2.5 sm:w-3" />
-          New
-        </div>
-
         {/* Favorite Button */}
         <button
           onClick={handleWishlistToggle}
-          className={`absolute top-2 right-2 sm:top-4 sm:right-4 p-2 sm:p-2.5 rounded-full shadow-lg transition-all duration-300 transform ${
+          className={`absolute top-2 right-2 sm:top-4 sm:right-4 p-2 sm:p-2.5 rounded-full shadow-md transition-all duration-300 ${
             isFavorite
-              ? "bg-red-500 text-white scale-100 sm:scale-110"
-              : "bg-white text-gray-600 hover:bg-red-50 hover:text-red-500 hover:scale-105 sm:hover:scale-110"
+              ? "bg-black text-white"
+              : "bg-white text-gray-600 hover:bg-black hover:text-white"
           }`}
         >
           <Heart
             className={`h-4 w-4 sm:h-5 sm:w-5 ${isFavorite ? "fill-current" : ""}`}
           />
         </button>
-
-        {/* Rating Badge */}
-        <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 bg-white bg-opacity-95 backdrop-blur px-2 sm:px-3 py-1 rounded-lg flex items-center gap-1 shadow-md">
-          <Star className="h-3 sm:h-4 w-3 sm:w-4 fill-yellow-400 text-yellow-400" />
-          <span className="text-xs sm:text-sm font-semibold text-gray-900">4.5</span>
-        </div>
-
-        {/* Overlay - Add to Cart */}
-        {/* <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 flex items-end justify-center p-4 transition-all duration-300">
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              addToCart(product, 1);
-            }}
-            className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
-          >
-            <ShoppingCart className="h-5 w-5" />
-            Add to Cart
-          </button>
-        </div> */}
       </div>
 
       {/* Product Info */}
-      <div className="p-3 sm:p-4 lg:p-5 flex-grow flex flex-col">
+      <div className="p-3 sm:p-4 flex-grow flex flex-col">
         {/* Product Name */}
         <Link
           to={`/product/${product.id}`}
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="block text-base sm:text-lg font-bold text-gray-900 line-clamp-2 hover:text-blue-600 transition-colors mb-2 sm:mb-3 leading-tight"
+          className="block text-sm sm:text-base font-bold text-gray-900 line-clamp-2 hover:text-gray-600 transition-colors mb-2 leading-tight"
         >
           {product.name}
         </Link>
 
-        {/* Description */}
-        <p className="text-xs sm:text-sm text-gray-500 line-clamp-2 mb-3 sm:mb-4 flex-grow">
-          Premium quality product with great features
-        </p>
-
         {/* Price Section */}
-        <div className="mb-3 sm:mb-4">
-          <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-              ₹{parseFloat(product.price).toFixed(2)}
-            </span>
-            <span className="text-xs sm:text-sm text-gray-400 line-through">₹{(parseFloat(product.price) * 1.2).toFixed(2)}</span>
-          </div>
-          <div className="text-xs text-green-600 font-semibold">Save 17%</div>
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-xl sm:text-2xl font-bold text-black">
+            ₹{parseFloat(product.price).toFixed(2)}
+          </span>
+          <span className="text-xs sm:text-sm text-gray-500 line-through">₹{(parseFloat(product.price) * 1.2).toFixed(2)}</span>
         </div>
 
-        {/* Stock & Availability */}
-        <div className="flex items-center gap-2 mb-3 pb-2 sm:pb-3 border-b border-gray-200">
-          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span className="text-xs sm:text-sm font-medium text-gray-700">In Stock (12+ items)</span>
-        </div>
-
-        {/* View Details Button */}
-        <Link
-          to={`/product/${product.id}`}
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="w-full mb-2 py-2 sm:py-3 bg-gray-100 text-gray-900 rounded-lg font-semibold hover:bg-gray-900 hover:text-white transition-all duration-300 text-center text-xs sm:text-sm transform hover:scale-105 active:scale-95"
-        >
-          View Details
-        </Link>
-        <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              addToCart(product, 1);
-            }}
-            className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-300 flex items-center justify-center gap-2 shadow-lg text-xs sm:text-sm"
+        {/* Buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={handleAddToCartClick}
+            className="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-900 transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm"
           >
             <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-            Add to Cart
+            Add
           </button>
+          <Link
+            to={`/product/${product.id}`}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-white border-2 border-gray-300 text-gray-900 rounded-lg font-semibold hover:border-gray-900 transition-all duration-300 text-center text-xs sm:text-sm"
+          >
+            View
+          </Link>
+        </div>
       </div>
+
+      {/* Cart Drawer */}
+      <CartDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        product={product}
+        onAddToCart={handleAddToCartFromDrawer}
+      />
     </div>
   );
 }
