@@ -186,36 +186,47 @@ export default function MyAccount() {
 
                     {/* Order Items */}
                     <div>
-                      <h4 className="font-semibold mb-3">Items</h4>
+                      <h4 className="font-semibold mb-3">Items Ordered</h4>
                       <div className="space-y-3">
                         {order.items && order.items.length > 0 ? (
                           order.items.map((item, idx) => (
                             <div key={idx} className="bg-white p-3 rounded border border-gray-200">
                               <div className="flex justify-between items-start mb-2">
-                                <div>
-                                  <p className="font-semibold">{item.name}</p>
-                                  <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                                <div className="flex-1">
+                                  <p className="font-semibold text-gray-900">{item.product_name || item.name || "Unknown Product"}</p>
+                                  <p className="text-sm text-gray-600 mt-1">Quantity: <span className="font-medium">{item.quantity}</span></p>
                                 </div>
-                                <p className="font-semibold">₹ {(Number(item.price) * Number(item.quantity)).toFixed(2)}</p>
+                                <p className="font-semibold text-gray-900 whitespace-nowrap ml-4">₹ {(Number(item.price) * Number(item.quantity)).toFixed(2)}</p>
                               </div>
 
                               {/* Show Variations if present */}
                               {item.selectedVariations && Object.keys(item.selectedVariations).length > 0 && (
-                                <div className="mt-2 pt-2 border-t border-gray-200">
-                                  <p className="text-xs font-semibold text-gray-700 mb-1">Variations:</p>
-                                  <div className="space-y-1">
-                                    {Object.entries(item.selectedVariations).map(([type, variation]) => (
-                                      <div key={type} className="text-xs text-gray-600">
-                                        <span className="font-medium">{type}:</span> {variation.variation_value || variation.name}
-                                      </div>
-                                    ))}
+                                <div className="mt-3 pt-3 border-t border-gray-200">
+                                  <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Selected Options:</p>
+                                  <div className="space-y-1.5">
+                                    {Object.entries(item.selectedVariations).map(([type, variation]) => {
+                                      const variationValue = typeof variation === 'object' 
+                                        ? (variation.variation_value || variation.name || '-') 
+                                        : variation;
+                                      return (
+                                        <div key={type} className="text-xs text-gray-600 flex items-start gap-2">
+                                          <span className="font-medium text-gray-800">{type}:</span>
+                                          <span className="text-gray-700">{variationValue}</span>
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               )}
+
+                              {/* Show unit price */}
+                              <div className="mt-2 pt-2 border-t border-gray-100">
+                                <p className="text-xs text-gray-600">Unit Price: <span className="font-medium text-gray-900">₹ {Number(item.price).toFixed(2)}</span></p>
+                              </div>
                             </div>
                           ))
                         ) : (
-                          <p className="text-sm text-gray-600">No items in this order</p>
+                          <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded">No items in this order</p>
                         )}
                       </div>
                     </div>

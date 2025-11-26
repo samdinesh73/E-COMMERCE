@@ -8,6 +8,7 @@ import EditProductForm from "../../components/admin/EditProductForm";
 import DeleteProductConfirm from "../../components/admin/DeleteProductConfirm";
 import UserList from "../../components/admin/UserList";
 import CategoryManager from "../../components/admin/CategoryManager";
+import OrderList from "../../components/admin/OrderList";
 import { Plus, List, Edit2, Trash2, Package, Users, ShoppingCart, TrendingUp, Loader, AlertCircle, Tag } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -264,158 +265,10 @@ export default function AdminDashboard() {
                   <div>
                     <div className="mb-6">
                       <h2 className="text-2xl font-bold text-gray-900 mb-2">All Orders</h2>
-                      <p className="text-gray-600">Orders from authenticated and guest checkouts</p>
+                      <p className="text-gray-600">Manage orders from authenticated and guest checkouts</p>
                     </div>
 
-                    {/* Date Range Filter */}
-                    <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
-                          <input
-                            type="date"
-                            value={fromDate}
-                            onChange={(e) => setFromDate(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
-                          <input
-                            type="date"
-                            value={toDate}
-                            onChange={(e) => setToDate(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => fetchOrders(fromDate, toDate)}
-                            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                          >
-                            Filter
-                          </button>
-                          <button
-                            onClick={() => {
-                              setFromDate("");
-                              setToDate("");
-                              fetchOrders("", "");
-                            }}
-                            className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-medium"
-                          >
-                            Clear
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {ordersLoading && (
-                      <div className="flex justify-center items-center py-12">
-                        <Loader className="h-8 w-8 text-blue-600 animate-spin" />
-                      </div>
-                    )}
-
-                    {ordersError && (
-                      <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
-                        <AlertCircle className="h-5 w-5 text-red-600" />
-                        <p className="text-red-700">{ordersError}</p>
-                      </div>
-                    )}
-
-                    {!ordersLoading && orders.length === 0 && (
-                      <div className="text-center py-12">
-                        <ShoppingCart className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                        <p className="text-gray-600 font-medium">No orders yet</p>
-                        <p className="text-gray-500 text-sm mt-1">Orders will appear here when customers place them</p>
-                      </div>
-                    )}
-
-                    {!ordersLoading && orders.length > 0 && (
-                      <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="bg-gray-50 border-b border-gray-200">
-                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Order ID</th>
-                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Customer Name</th>
-                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Email</th>
-                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Phone</th>
-                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Address</th>
-                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Amount</th>
-                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Status</th>
-                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Type</th>
-                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900 whitespace-nowrap">Date</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-200">
-                            {orders.map((order) => {
-                              // Determine if this is a login_orders or orders table entry
-                              const isAuthOrder = order.user_id !== undefined;
-                              const orderType = isAuthOrder ? "Authenticated" : "Guest";
-                              
-                              return (
-                                <tr 
-                                  key={`${orderType}-${order.id}`} 
-                                  onClick={() => navigate(`/admin/order/${order.id}`)}
-                                  className="hover:bg-blue-50 transition-colors cursor-pointer"
-                                >
-                                  <td className="px-4 py-3 text-sm font-medium text-gray-900">#{order.id}</td>
-                                  <td className="px-4 py-3 text-sm text-gray-700">
-                                    {order.full_name || order.customer_name || "-"}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-gray-700 truncate max-w-xs">
-                                    {order.email || "-"}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-gray-700">
-                                    {order.phone || order.phone_number || "-"}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-gray-700 truncate max-w-xs">
-                                    {order.address || order.shipping_address || "-"}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm font-semibold text-gray-900">
-                                    ₹{parseFloat(order.total_amount || order.amount || 0).toFixed(2)}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm">
-                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                                      order.status === "completed" || order.status === "success"
-                                        ? "bg-green-100 text-green-700" 
-                                        : order.status === "pending" || order.status === "processing"
-                                        ? "bg-yellow-100 text-yellow-700"
-                                        : order.status === "cancelled" || order.status === "failed"
-                                        ? "bg-red-100 text-red-700"
-                                        : "bg-blue-100 text-blue-700"
-                                    }`}>
-                                      {order.status || "pending"}
-                                    </span>
-                                  </td>
-                                  <td className="px-4 py-3 text-sm">
-                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                                      isAuthOrder 
-                                        ? "bg-blue-100 text-blue-700" 
-                                        : "bg-gray-100 text-gray-700"
-                                    }`}>
-                                      {orderType}
-                                    </span>
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                                    {new Date(order.created_at).toLocaleDateString('en-IN', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric'
-                                    })}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-
-                    {!ordersLoading && orders.length > 0 && (
-                      <div className="mt-4 text-sm text-gray-600">
-                        <p>Showing <span className="font-semibold text-gray-900">{orders.length}</span> total orders</p>
-                      </div>
-                    )}
+                    <OrderList />
                   </div>
                 )}
               </div>

@@ -29,7 +29,7 @@ function App() {
           <Router>
             <div className="min-h-screen bg-white text-black">
               <Navbar />
-              <main>
+              <main className="pb-24 md:pb-0">
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/shop" element={<Shop />} />
