@@ -76,7 +76,7 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
-              <img src="./assets/img/pixelcut-export.png" alt="Logo" className="h-12 w-auto object-contain" />
+              <img src="./assets/img/1114.jpg" alt="Logo" className="h-12 w-auto object-contain" />
             </Link>
 
             {/* Centered Navigation Links */}

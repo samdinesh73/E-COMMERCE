@@ -3,19 +3,29 @@ import { useParams, useNavigate } from "react-router-dom";
 import { categoryService } from "../services/api";
 import { getBackendImageUrl } from "../utils/imageHelper";
 import ProductCard from "../components/common/ProductCard";
-import { Loader, AlertCircle, ArrowLeft } from "lucide-react";
+import ShopFilters from "../components/common/ShopFilters";
+import { Loader, AlertCircle, ArrowLeft, Search } from "lucide-react";
 
 export default function CategoryPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [category, setCategory] = useState(null);
-  const [products, setProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("relevance");
+  const [priceRange, setPriceRange] = useState({ min: 0, max: Infinity });
+  const [selectedVariations, setSelectedVariations] = useState({});
 
   useEffect(() => {
     fetchCategoryProducts();
   }, [slug]);
+
+  useEffect(() => {
+    applyFiltersAndSort();
+  }, [searchQuery, sortBy, priceRange, selectedVariations, allProducts]);
 
   const fetchCategoryProducts = async () => {
     try {
@@ -23,13 +33,67 @@ export default function CategoryPage() {
       setError(null);
       const res = await categoryService.getBySlug(slug);
       setCategory(res.data.category);
-      setProducts(res.data.products);
+      setAllProducts(res.data.products);
     } catch (err) {
       console.error("Error fetching category:", err);
       setError("Category not found or failed to load");
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFiltersAndSort = () => {
+    let results = [...allProducts];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      results = results.filter(
+        (product) =>
+          product.name.toLowerCase().includes(query) ||
+          (product.description && product.description.toLowerCase().includes(query))
+      );
+    }
+
+    // Price filter
+    results = results.filter(
+      (product) =>
+        parseFloat(product.price) >= priceRange.min &&
+        parseFloat(product.price) <= priceRange.max
+    );
+
+    // Variation filter
+    if (Object.keys(selectedVariations).length > 0) {
+      results = results.filter((product) => {
+        // This would need to match product variations if available
+        // For now, we'll skip this as it depends on product variation structure
+        return true;
+      });
+    }
+
+    // Sorting
+    switch (sortBy) {
+      case "price-low-to-high":
+        results.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+        break;
+      case "price-high-to-low":
+        results.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+        break;
+      case "name-a-to-z":
+        results.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "name-z-to-a":
+        results.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      case "newest":
+        results.sort((a, b) => (new Date(b.created_at) || 0) - (new Date(a.created_at) || 0));
+        break;
+      default:
+        // relevance - keep original order
+        break;
+    }
+
+    setFilteredProducts(results);
   };
 
   if (loading) {
@@ -103,7 +167,7 @@ export default function CategoryPage() {
 
       {/* Products */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        {products.length === 0 ? (
+        {allProducts.length === 0 ? (
           <div className="bg-white rounded-lg p-8 sm:p-12 text-center border border-gray-200">
             <p className="text-lg text-gray-600 mb-6">
               No products found in this category
@@ -116,20 +180,94 @@ export default function CategoryPage() {
             </button>
           </div>
         ) : (
-          <div>
-            <p className="text-gray-600 mb-6 text-sm sm:text-base">
-              Showing {products.length} product{products.length !== 1 ? "s" : ""}
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onProductClick={() => {
-                    window.scrollTo(0, 0);
-                  }}
-                />
-              ))}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Sidebar Filters */}
+            <div className="lg:col-span-1">
+              <ShopFilters
+                onFilterChange={() => {}}
+                onCategoryChange={() => {}}
+                onPriceChange={setPriceRange}
+                onVariationChange={setSelectedVariations}
+                selectedCategories={[]}
+                priceRange={priceRange}
+                selectedVariations={selectedVariations}
+                loading={loading}
+              />
+            </div>
+
+            {/* Products Section */}
+            <div className="lg:col-span-3">
+              {/* Search and Sort Bar */}
+              <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-6">
+                <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
+                  {/* Search Box */}
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search products..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  {/* Sort Dropdown */}
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white cursor-pointer"
+                  >
+                    <option value="relevance">Sort: Relevance</option>
+                    <option value="price-low-to-high">Price: Low to High</option>
+                    <option value="price-high-to-low">Price: High to Low</option>
+                    <option value="name-a-to-z">Name: A to Z</option>
+                    <option value="name-z-to-a">Name: Z to A</option>
+                    <option value="newest">Newest First</option>
+                  </select>
+                </div>
+
+                {/* Active Filters Info */}
+                {(searchQuery || priceRange.min !== 0 || priceRange.max !== Infinity) && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <p className="text-sm text-gray-600">
+                      {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""} found
+                      {searchQuery && ` for "${searchQuery}"`}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Products Grid */}
+              {filteredProducts.length === 0 ? (
+                <div className="bg-white rounded-lg p-8 sm:p-12 text-center border border-gray-200">
+                  <p className="text-lg text-gray-600 mb-6">
+                    No products match your search or filters
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      setPriceRange({ min: 0, max: Infinity });
+                      setSelectedVariations({});
+                    }}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+                  {filteredProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onProductClick={() => {
+                        window.scrollTo(0, 0);
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
