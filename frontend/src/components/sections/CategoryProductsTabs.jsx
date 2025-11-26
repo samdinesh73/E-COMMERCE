@@ -156,7 +156,7 @@ export default function CategoryProductsTabs() {
           </div>
         ) : products.length === 0 ? (
           <div className="flex items-center justify-center py-20">
-            <p className="text-gray-600 text-lg">No products found in this category</p>
+            <p className="text-gray-600 text-lg">No product found in this category</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
