@@ -7,9 +7,9 @@ export default function FeaturesSection() {
   return (
     <div className="bg-white border-t border-gray-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
             {/* Feature 1 */}
-            <div className="group hover:bg-gray-50 p-4 sm:p-6 rounded-lg sm:rounded-xl transition-all duration-300 border border-transparent hover:border-gray-300">
+            <div className="group hover:bg-gray-50 p-4 sm:p-6 rounded-lg sm:rounded-xl transition-all duration-300 border border-border-gray-300 hover:border-gray-300">
               <div className="flex items-center justify-center h-10 sm:h-12 w-10 sm:w-12 rounded-lg bg-blue-100 mb-3 sm:mb-4 group-hover:bg-blue-200">
                 <Zap className="h-5 sm:h-6 w-5 sm:w-6 text-blue-600" />
               </div>
@@ -20,7 +20,7 @@ export default function FeaturesSection() {
             </div>
 
             {/* Feature 2 */}
-            <div className="group hover:bg-gray-50 p-4 sm:p-6 rounded-lg sm:rounded-xl transition-all duration-300 border border-transparent hover:border-gray-300">
+            <div className="group hover:bg-gray-50 p-4 sm:p-6 rounded-lg sm:rounded-xl transition-all duration-300 border border-border-gray-300 hover:border-gray-300">
               <div className="flex items-center justify-center h-10 sm:h-12 w-10 sm:w-12 rounded-lg bg-blue-100 mb-3 sm:mb-4 group-hover:bg-blue-200">
                 <Shield className="h-5 sm:h-6 w-5 sm:w-6 text-blue-600" />
               </div>
@@ -31,7 +31,7 @@ export default function FeaturesSection() {
             </div>
 
             {/* Feature 3 */}
-            <div className="group hover:bg-gray-50 p-4 sm:p-6 rounded-lg sm:rounded-xl transition-all duration-300 border border-transparent hover:border-gray-300">
+            <div className="group hover:bg-gray-50 p-4 sm:p-6 rounded-lg sm:rounded-xl transition-all duration-300 border border-border-gray-300 hover:border-gray-300">
               <div className="flex items-center justify-center h-10 sm:h-12 w-10 sm:w-12 rounded-lg bg-blue-100 mb-3 sm:mb-4 group-hover:bg-blue-200">
                 <Truck className="h-5 sm:h-6 w-5 sm:w-6 text-blue-600" />
               </div>
@@ -42,7 +42,7 @@ export default function FeaturesSection() {
             </div>
 
             {/* Feature 4 */}
-            <div className="group hover:bg-gray-50 p-4 sm:p-6 rounded-lg sm:rounded-xl transition-all duration-300 border border-transparent hover:border-gray-300">
+            <div className="group hover:bg-gray-50 p-4 sm:p-6 rounded-lg sm:rounded-xl transition-all duration-300 border border-border-gray-300 hover:border-gray-300">
               <div className="flex items-center justify-center h-10 sm:h-12 w-10 sm:w-12 rounded-lg bg-blue-100 mb-3 sm:mb-4 group-hover:bg-blue-200">
                 <ShoppingCart className="h-5 sm:h-6 w-5 sm:w-6 text-blue-600" />
               </div>

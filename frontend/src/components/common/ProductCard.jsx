@@ -64,10 +64,10 @@ export default function ProductCard({ product }) {
   };
 
   return (
-    <div className="group bg-white rounded-lg sm:rounded-xl border border-gray-300 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full">
+    <div className="group relative bg-white rounded-lg sm:rounded-xl border border-gray-300 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full">
       {/* Image Container */}
       <div
-        className="relative w-full flex-shrink-0 overflow-hidden bg-gray-100 cursor-pointer aspect-[3/4]"
+        className="relative group w-full flex-shrink-0 overflow-hidden bg-gray-100 cursor-pointer aspect-[3/4]"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         onMouseEnter={() => setShowSecondary(true)}
         onMouseLeave={() => setShowSecondary(false)}
@@ -110,9 +110,28 @@ export default function ProductCard({ product }) {
           }`}
         >
           <Heart
-            className={`h-4 w-4 sm:h-5 sm:w-5 ${isFavorite ? "fill-current" : ""}`}
+            className={`h-3 w-3 sm:h-5 sm:w-5 ${isFavorite ? "fill-current" : ""}`}
           />
         </button>
+
+        {/* Mobile Add-to-cart Button (below wishlist) */}
+        <button
+          onClick={handleAddToCartClick}
+          className="sm:hidden absolute top-12 right-2 p-2 bg-white text-gray-600 rounded-full shadow-md hover:bg-black hover:text-white transition-all duration-300"
+        >
+          <ShoppingCart className="h-3 w-3" />
+        </button>
+
+        {/* Add-to-cart button (shows on hovering the image - desktop only) */}
+        <div className="hidden sm:block absolute left-0 right-0 bottom-3 z-10 px-3">
+          <button
+            onClick={handleAddToCartClick}
+            className="pointer-events-auto opacity-0 translate-y-3 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 bg-white/80 text-black px-4 py-2 rounded-md text-sm font-semibold w-full flex items-center justify-center gap-2"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            Add to cart
+          </button>
+        </div>
       </div>
 
       {/* Product Info */}
@@ -121,36 +140,20 @@ export default function ProductCard({ product }) {
         <Link
           to={`/product/${product.id}`}
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="block text-sm sm:text-base font-bold text-gray-900 line-clamp-2 hover:text-gray-600 transition-colors mb-2 leading-tight"
+          className="block text-sm sm:text-base  text-gray-900 line-clamp-2 hover:text-gray-600 transition-colors mb-2 leading-tight"
         >
           {product.name}
         </Link>
 
         {/* Price Section */}
         <div className="mb-4 flex items-center gap-2">
-          <span className="text-xl sm:text-2xl font-bold text-black">
+          <span className="text-l sm:text-l  text-black">
             ₹{parseFloat(product.price).toFixed(2)}
           </span>
           <span className="text-xs sm:text-sm text-gray-500 line-through">₹{(parseFloat(product.price) * 1.2).toFixed(2)}</span>
         </div>
 
-        {/* Buttons */}
-        <div className="flex gap-2">
-          <button
-            onClick={handleAddToCartClick}
-            className="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-900 transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm"
-          >
-            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-            Add
-          </button>
-          <Link
-            to={`/product/${product.id}`}
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-white border-2 border-gray-300 text-gray-900 rounded-lg font-semibold hover:border-gray-900 transition-all duration-300 text-center text-xs sm:text-sm"
-          >
-            View
-          </Link>
-        </div>
+        {/* Buttons: intentionally left empty (Add-to-cart appears over image) */}
       </div>
 
       {/* Cart Drawer */}
@@ -160,6 +163,17 @@ export default function ProductCard({ product }) {
         product={product}
         onAddToCart={handleAddToCartFromDrawer}
       />
+
+      {/* Hover Add-to-cart button (bottom center of card) */}
+      {/* <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-4 w-full max-w-xs flex justify-center">
+        <button
+          onClick={handleAddToCartClick}
+          className="pointer-events-auto opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 bg-black text-white px-4 py-3 rounded-full flex items-center gap-2 text-sm font-semibold shadow-lg"
+        >
+          <ShoppingCart className="h-4 w-4" />
+          Add to cart
+        </button>
+      </div> */}
     </div>
   );
 }

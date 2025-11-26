@@ -28,7 +28,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ["'Segoe UI'", "Tahoma", "Geneva", "Verdana", "sans-serif"],
+        sans: ["'Poppins'", "ui-sans-serif", "system-ui", "-apple-system", "'Segoe UI'", "Roboto", "'Helvetica Neue'", "Arial", "'Noto Sans'", "sans-serif"],
       },
       boxShadow: {
         card: "0 2px 8px rgba(0, 0, 0, 0.06)",
