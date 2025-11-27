@@ -5,6 +5,7 @@ import { getImageUrl, getBackendImageUrl } from "../utils/imageHelper";
 import ProductImageGallery from "../components/common/ProductImageGallery";
 import ProductCard from "../components/common/ProductCard";
 import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 import { Heart, ShoppingCart, Truck, Shield, RotateCcw, Loader, AlertCircle, ChevronDown } from "lucide-react";
 import axios from "axios";
 
@@ -13,6 +14,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,6 +34,8 @@ export default function ProductDetail() {
         const res = await productService.getById(id);
         setProduct(res.data);
         setError(null);
+        // Check if product is in wishlist
+        setIsFavorite(isInWishlist(res.data.id));
         
         // Fetch variations for this product
         fetchVariations(res.data.id);
@@ -49,7 +53,7 @@ export default function ProductDetail() {
     };
 
     fetchProduct();
-  }, [id]);
+  }, [id, isInWishlist]);
 
   const fetchVariations = async (productId) => {
     try {
@@ -86,6 +90,16 @@ export default function ProductDetail() {
     }, 2500);
   };
 
+  const handleToggleWishlist = () => {
+    if (!product) return;
+    if (isFavorite) {
+      removeFromWishlist(product.id);
+    } else {
+      addToWishlist(product);
+    }
+    setIsFavorite(!isFavorite);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center px-4">
@@ -117,7 +131,7 @@ export default function ProductDetail() {
   const imageUrl = getImageUrl(product.image);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
       {/* Breadcrumb Navigation */}
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
@@ -134,7 +148,19 @@ export default function ProductDetail() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12">
           {/* Image Section - Using Gallery Component */}
-          <div className="flex items-start justify-center lg:sticky lg:top-20 lg:h-fit">
+          <div className="flex items-start justify-center lg:sticky lg:top-20 lg:h-fit relative">
+            {/* Wishlist Button - Top Right Corner */}
+            <button
+              onClick={handleToggleWishlist}
+              className={`absolute top-4 right-4 z-10 p-2 sm:p-3 rounded-full transition-all shadow-lg ${
+                isFavorite
+                  ? "bg-red-100 text-red-600"
+                  : "bg-white text-gray-600 hover:bg-red-50"
+              }`}
+              title="Add to wishlist"
+            >
+              <Heart className={`h-5 sm:h-6 w-5 sm:w-6 ${isFavorite ? "fill-current" : ""}`} />
+            </button>
             <div className="w-full">
               {(() => {
                 // Get first selected variation with images
@@ -165,22 +191,12 @@ export default function ProductDetail() {
           {/* Product Details Section */}
           <div className="flex flex-col">
             {/* Product Header */}
-            <div className="mb-6">
-              <div className="flex items-start justify-between mb-3 gap-4">
+            <div className="">
+              <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-xs sm:text-sm font-semibold text-blue-600 mb-2">PRODUCT ID: {product.id}</p>
-                  <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 mb-4 break-words">{product.name}</h1>
+                  <h1 className="text-xl sm:text-xl lg:text-xl xl:text-xl font-semibold text-gray-900 break-words">{product.name}</h1>
                 </div>
-                <button
-                  onClick={() => setIsFavorite(!isFavorite)}
-                  className={`flex-shrink-0 p-2 sm:p-3 rounded-full transition-all ${
-                    isFavorite
-                      ? "bg-red-100 text-red-600"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  <Heart className={`h-5 sm:h-6 w-5 sm:w-6 ${isFavorite ? "fill-current" : ""}`} />
-                </button>
               </div>
 
               {/* Rating */}
@@ -195,12 +211,12 @@ export default function ProductDetail() {
             </div>
 
             {/* Divider */}
-            <div className="h-px bg-gray-200 mb-6"></div>
+            <div className="h-px bg-gray-200 mb-2"></div>
 
             {/* Price Section */}
-            <div className="mb-6 sm:mb-8">
+            <div className="mb-3 sm:mb-4">
               <div className="flex items-center gap-3 sm:gap-4 mb-2 flex-wrap">
-                <span className="text-3xl sm:text-4xl lg:text-5xl font-bold text-black">
+                <span className="text-xl sm:text-xl lg:text-xl font-normal text-black">
                   ₹{(() => {
                     const selectedVars = Object.values(selectedVariations);
                     if (selectedVars.length > 0) {
@@ -212,7 +228,7 @@ export default function ProductDetail() {
                     return Math.round(Number(product.price));
                   })()}
                 </span>
-                <span className="inline-block px-2 sm:px-3 py-1 bg-gray-200 text-gray-900 text-xs sm:text-sm font-semibold rounded-full">
+                <span className="inline-block px-2 sm:px-3 py-1 bg-gray-200 text-gray-900 text-xs sm:text-sm font-normal rounded-full">
                   In Stock
                 </span>
               </div>
@@ -239,7 +255,7 @@ export default function ProductDetail() {
                     return (
                       <div key={type}>
                         <div className="flex items-center justify-between mb-3 sm:mb-4">
-                          <h3 className="text-sm sm:text-base font-bold text-gray-900">Select {type}</h3>
+                          <h3 className="text-sm sm:text-base font-normal text-gray-900">Select {type}</h3>
                           {isColorType && <a href="#size-guide" className="text-xs sm:text-sm text-blue-600 hover:underline font-medium">Size Guide</a>}
                         </div>
                         
@@ -305,10 +321,10 @@ export default function ProductDetail() {
                                     });
                                   }
                                 }}
-                                className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-semibold transition-all duration-300 text-xs sm:text-sm border-2 ${
+                                className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-normal transition-all duration-300 text-xs sm:text-sm border-2 ${
                                   selectedForType?.id === variation.id
                                     ? "bg-black text-white border-black shadow-md"
-                                    : "bg-white text-gray-900 border-gray-300 hover:border-gray-900"
+                                    : "bg-transparent text-gray-900 border-gray-300 hover:border-gray-900"
                                 }`}
                               >
                                 {variation.variation_value}
@@ -365,16 +381,16 @@ export default function ProductDetail() {
             </div>
 
             {/* Product Details Accordion */}
-            <div className="space-y-0 border border-gray-300 rounded-lg divide-y divide-gray-300">
+            <div className="space-y-0  rounded-lg divide-y ">
               {/* Specifications */}
               <div className="border-b border-gray-300">
                 <button
                   onClick={() => setExpandedAccordion(expandedAccordion === 'specs' ? null : 'specs')}
-                  className="w-full flex items-center justify-between p-4 hover:bg-gray-100 transition-colors"
+                  className="w-full flex items-center justify-between p-4  transition-colors"
                 >
                   <div className="text-left">
-                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Specifications</h4>
-                    <p className="text-xs sm:text-sm text-gray-700 mt-0.5">Technical details and features</p>
+                    <h4 className="font-medium text-gray-900 text-sm sm:text-base">Specifications</h4>
+                    {/* <p className="text-xs sm:text-sm text-gray-700 mt-0.5">Technical details and features</p> */}
                   </div>
                   <ChevronDown 
                     className={`h-5 w-5 text-gray-900 transition-transform duration-300 flex-shrink-0 ${
@@ -383,7 +399,7 @@ export default function ProductDetail() {
                   />
                 </button>
                 {expandedAccordion === 'specs' && (
-                  <div className="px-4 pb-4 text-sm sm:text-base text-gray-800 bg-gray-50">
+                  <div className="px-4 pb-4 text-sm sm:text-base text-gray-800 ">
                     <ul className="space-y-2">
                       <li><span className="font-medium">Availability:</span> <span className="text-gray-900 font-bold">In Stock</span></li>
                       <li><span className="font-medium">Product ID:</span> PROD-{product.id}</li>
@@ -398,11 +414,11 @@ export default function ProductDetail() {
               <div className="border-b border-gray-300">
                 <button
                   onClick={() => setExpandedAccordion(expandedAccordion === 'desc' ? null : 'desc')}
-                  className="w-full flex items-center justify-between p-4 hover:bg-gray-100 transition-colors"
+                  className="w-full flex items-center justify-between p-4  transition-colors"
                 >
                   <div className="text-left">
-                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Description</h4>
-                    <p className="text-xs sm:text-sm text-gray-700 mt-0.5">Product overview and details</p>
+                    <h4 className="font-medium text-gray-900 text-sm sm:text-base">Description</h4>
+                    {/* <p className="text-xs sm:text-sm text-gray-700 mt-0.5">Product overview and details</p> */}
                   </div>
                   <ChevronDown 
                     className={`h-5 w-5 text-gray-900 transition-transform duration-300 flex-shrink-0 ${
@@ -411,7 +427,7 @@ export default function ProductDetail() {
                   />
                 </button>
                 {expandedAccordion === 'desc' && (
-                  <div className="px-4 pb-4 text-sm sm:text-base text-gray-800 bg-gray-50">
+                  <div className="px-4 pb-4 text-sm sm:text-base text-gray-800 ">
                     {product.description || "Premium quality product with excellent features and durability."}
                   </div>
                 )}
@@ -421,11 +437,11 @@ export default function ProductDetail() {
               <div className="border-b border-gray-300">
                 <button
                   onClick={() => setExpandedAccordion(expandedAccordion === 'policy' ? null : 'policy')}
-                  className="w-full flex items-center justify-between p-4 hover:bg-gray-100 transition-colors"
+                  className="w-full flex items-center justify-between p-4  transition-colors"
                 >
                   <div className="text-left">
-                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Returns, Exchange, & Refund Policy</h4>
-                    <p className="text-xs sm:text-sm text-gray-700 mt-0.5">7 days easy returns and exchange</p>
+                    <h4 className="font-medium text-gray-900 text-sm sm:text-base">Returns, Exchange, & Refund Policy</h4>
+                    {/* <p className="text-xs sm:text-sm text-gray-700 mt-0.5">7 days easy returns and exchange</p> */}
                   </div>
                   <ChevronDown 
                     className={`h-5 w-5 text-gray-900 transition-transform duration-300 flex-shrink-0 ${
@@ -434,7 +450,7 @@ export default function ProductDetail() {
                   />
                 </button>
                 {expandedAccordion === 'policy' && (
-                  <div className="px-4 pb-4 text-sm sm:text-base text-gray-800 bg-gray-50 space-y-3">
+                  <div className="px-4 pb-4 text-sm sm:text-base text-gray-800  space-y-3">
                     <p><span className="font-medium">Return Period:</span> 7 days from delivery</p>
                     <p><span className="font-medium">Condition:</span> Product must be unused and in original packaging</p>
                     <p><span className="font-medium">Process:</span> Contact support to initiate return/exchange</p>
@@ -447,11 +463,11 @@ export default function ProductDetail() {
               <div>
                 <button
                   onClick={() => setExpandedAccordion(expandedAccordion === 'seller' ? null : 'seller')}
-                  className="w-full flex items-center justify-between p-4 hover:bg-gray-100 transition-colors"
+                  className="w-full flex items-center justify-between p-4  transition-colors"
                 >
                   <div className="text-left">
-                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Marketed By</h4>
-                    <p className="text-xs sm:text-sm text-gray-700 mt-0.5">Company and distributor information</p>
+                    <h4 className="font-medium text-gray-900 text-sm sm:text-base">Marketed By</h4>
+                    {/* <p className="text-xs sm:text-sm text-gray-700 mt-0.5">Company and distributor information</p> */}
                   </div>
                   <ChevronDown 
                     className={`h-5 w-5 text-gray-900 transition-transform duration-300 flex-shrink-0 ${
@@ -460,7 +476,7 @@ export default function ProductDetail() {
                   />
                 </button>
                 {expandedAccordion === 'seller' && (
-                  <div className="px-4 pb-4 text-sm sm:text-base text-gray-800 bg-gray-50 space-y-2">
+                  <div className="px-4 pb-4 text-sm sm:text-base text-gray-800  space-y-2">
                     <p><span className="font-medium">Seller:</span> Sellerocket Store</p>
                     <p><span className="font-medium">Email:</span> support@sellerocket.com</p>
                     <p><span className="font-medium">Phone:</span> +91-XXXXXXXXXX</p>

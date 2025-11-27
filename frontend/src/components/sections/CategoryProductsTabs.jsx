@@ -105,7 +105,7 @@ export default function CategoryProductsTabs() {
         <div className="sticky top-0 z-40 flex flex-wrap justify-center gap-2 sm:gap-3 py-2 mb-4 px-2  border-b border-gray-200/50 bg-gradient-to-b from-white via-gray-50 to-white/80 backdrop-blur-sm">
           <button
             onClick={() => handleCategoryClick(null)}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 font-semibold text-xs leading-[0.5rem] sm:text-sm sm:leading-[0.5rem] transition-all duration-300 backdrop-blur-md border ${
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 font-normal text-xs leading-[0.5rem] sm:text-sm sm:leading-[0.5rem] transition-all duration-300 backdrop-blur-md border ${
               activeCategory === null
                 ? "bg-black text-white shadow-lg border-black"
                 : "bg-white/30 text-gray-800 hover:bg-white/50 border-white/40 hover:border-white/60"
@@ -117,7 +117,7 @@ export default function CategoryProductsTabs() {
             <button
               key={category.id}
               onClick={() => handleCategoryClick(category.id)}
-              className={`px-1 sm:px-4 py-1 sm:py-1 border-black font-semibold text-xs leading-[0.5rem] sm:text-sm sm:leading-[0.5rem] transition-all duration-300 backdrop-blur-md border ${
+              className={`px-1 sm:px-4 py-1 sm:py-1 border-black font-normal text-xs leading-[0.5rem] sm:text-sm sm:leading-[0.5rem] transition-all duration-300 backdrop-blur-md border ${
                 activeCategory === category.id
                   ? "bg-black text-white shadow-lg border-black"
                   : "bg-white/30 text-gray-800 hover:bg-black/50 border-black "
