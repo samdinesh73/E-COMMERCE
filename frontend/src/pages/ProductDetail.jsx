@@ -206,7 +206,7 @@ export default function ProductDetail() {
                     <span key={i} className="text-yellow-400 text-sm sm:text-base">★</span>
                   ))}
                 </div>
-                <span className="text-xs sm:text-sm text-gray-600 font-medium">(328 reviews)</span>
+                <span className="text-xs sm:text-sm text-gray-600 font-medium">(326 reviews)</span>
               </div>
             </div>
 
