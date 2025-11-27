@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "../../constants/config";
+import { getImageUrl } from "../../utils/imageHelper";
 import ProductCard from "../common/ProductCard";
 import { AlertCircle, Loader } from "lucide-react";
 
@@ -9,6 +10,9 @@ export default function ProductList({
   selectedCategories = [],
   priceRange = { min: 0, max: Infinity },
   selectedVariations = {},
+  gridLayout = "grid-cols-3",
+  viewMode = "full",
+  mobileGridLayout = "grid-cols-2",
 }) {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -148,11 +152,44 @@ export default function ProductList({
           <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6 font-medium">
             Showing {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {viewMode === "images-only" ? (
+            // Images Only Grid - 4 columns for portrait, responsive
+            <div 
+              className="grid gap-2 sm:gap-3 lg:gap-4"
+              style={{
+                gridTemplateColumns: "repeat(4, minmax(0, 1fr))"
+              }}
+            >
+              {filteredProducts.map((product) => (
+                <div key={product.id} className="relative group rounded-lg overflow-hidden bg-gray-100 aspect-[9/16 ]">
+                  <img 
+                    src={getImageUrl(product.image)}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            // Full Product Cards Grid - 2 columns default for mobile/portrait
+            <div 
+              className="grid gap-3 sm:gap-4 lg:gap-6"
+              style={{
+                gridTemplateColumns: window.innerWidth < 640 
+                  ? "repeat(2, minmax(0, 1fr))"
+                  : gridLayout === "grid-cols-2" 
+                  ? "repeat(2, minmax(0, 1fr))" 
+                  : gridLayout === "grid-cols-3" 
+                  ? "repeat(3, minmax(0, 1fr))"
+                  : "repeat(4, minmax(0, 1fr))"
+              }}
+            >
+              {filteredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </section>

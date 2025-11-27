@@ -4,7 +4,7 @@ import { categoryService } from "../services/api";
 import { getBackendImageUrl } from "../utils/imageHelper";
 import ProductCard from "../components/common/ProductCard";
 import ShopFilters from "../components/common/ShopFilters";
-import { Loader, AlertCircle, ArrowLeft, Search } from "lucide-react";
+import { Loader, AlertCircle, ArrowLeft, Search, Filter, X } from "lucide-react";
 
 export default function CategoryPage() {
   const { slug } = useParams();
@@ -16,6 +16,7 @@ export default function CategoryPage() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("relevance");
+  const [showFilters, setShowFilters] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: 0, max: Infinity });
   const [selectedVariations, setSelectedVariations] = useState({});
 
@@ -155,7 +156,7 @@ export default function CategoryPage() {
               <img
                 src={getBackendImageUrl(category.image)}
                 alt={category.name}
-                className="w-24 h-24 sm:w-32 sm:h-32 rounded-lg object-cover"
+                className="w-24 h-24 sm:w-32 sm:h-32 rounded-lg object-cover object-bottom"
                 onError={(e) => {
                   e.target.style.display = "none";
                 }}
@@ -180,96 +181,90 @@ export default function CategoryPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Sidebar Filters */}
-            <div className="lg:col-span-1">
-              <ShopFilters
-                onFilterChange={() => {}}
-                onCategoryChange={() => {}}
-                onPriceChange={setPriceRange}
-                onVariationChange={setSelectedVariations}
-                selectedCategories={[]}
-                priceRange={priceRange}
-                selectedVariations={selectedVariations}
-                loading={loading}
-              />
-            </div>
-
-            {/* Products Section */}
-            <div className="lg:col-span-3">
-              {/* Search and Sort Bar */}
-              <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-6">
-                <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
-                  {/* Search Box */}
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search products..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  {/* Sort Dropdown */}
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white cursor-pointer"
-                  >
-                    <option value="relevance">Sort: Relevance</option>
-                    <option value="price-low-to-high">Price: Low to High</option>
-                    <option value="price-high-to-low">Price: High to Low</option>
-                    <option value="name-a-to-z">Name: A to Z</option>
-                    <option value="name-z-to-a">Name: Z to A</option>
-                    <option value="newest">Newest First</option>
-                  </select>
-                </div>
-
-                {/* Active Filters Info */}
-                {(searchQuery || priceRange.min !== 0 || priceRange.max !== Infinity) && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <p className="text-sm text-gray-600">
-                      {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""} found
-                      {searchQuery && ` for "${searchQuery}"`}
-                    </p>
-                  </div>
-                )}
+          <>
+            {/* Search and Filter Bar */}
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between mb-6">
+              {/* Search Box */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                />
               </div>
 
-              {/* Products Grid */}
+              {/* Filter Button */}
+              <button
+                onClick={() => setShowFilters(true)}
+                className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-gray-700 font-medium whitespace-nowrap"
+              >
+                <Filter className="h-5 w-5" />
+                Filters
+              </button>
+            </div>
+
+            {/* Showing Products Count */}
+            <div className="mb-6">
+              <p className="text-gray-700 font-medium">
+                Showing {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+
+            {/* Products Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProducts.length === 0 ? (
-                <div className="bg-white rounded-lg p-8 sm:p-12 text-center border border-gray-200">
-                  <p className="text-lg text-gray-600 mb-6">
-                    No products match your search or filters
+                <div className="col-span-full text-center py-12">
+                  <p className="text-lg text-gray-600">
+                    No products match your search
                   </p>
-                  <button
-                    onClick={() => {
-                      setSearchQuery("");
-                      setPriceRange({ min: 0, max: Infinity });
-                      setSelectedVariations({});
-                    }}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Clear Filters
-                  </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-                  {filteredProducts.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      onProductClick={() => {
-                        window.scrollTo(0, 0);
-                      }}
-                    />
-                  ))}
-                </div>
+                filteredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))
               )}
             </div>
-          </div>
+
+            {/* Filter Sidebar Modal - Mobile Only */}
+            {showFilters && (
+              <div className="fixed inset-0 z-50">
+                {/* Backdrop */}
+                <div
+                  className="fixed inset-0 bg-black/50"
+                  onClick={() => setShowFilters(false)}
+                />
+
+                {/* Filter Sidebar - Slides from left */}
+                <div className="fixed left-0 top-0 bottom-0 w-full max-w-xs bg-white shadow-lg overflow-y-auto">
+                  <div className="p-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10">
+                    <h2 className="text-lg font-bold">Filters</h2>
+                    <button
+                      onClick={() => setShowFilters(false)}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <X className="h-6 w-6" />
+                    </button>
+                  </div>
+                  <div className="p-4">
+                    <ShopFilters
+                      onFilterChange={() => {}}
+                      onCategoryChange={() => {}}
+                      onPriceChange={setPriceRange}
+                      onVariationChange={setSelectedVariations}
+                      selectedCategories={[]}
+                      priceRange={priceRange}
+                      selectedVariations={selectedVariations}
+                      loading={loading}
+                      onClose={() => setShowFilters(false)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

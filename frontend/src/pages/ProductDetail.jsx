@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { productService } from "../services/api";
 import { getImageUrl, getBackendImageUrl } from "../utils/imageHelper";
@@ -14,6 +14,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const imageRef = useRef(null);
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -148,14 +149,14 @@ export default function ProductDetail() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12">
           {/* Image Section - Using Gallery Component */}
-          <div className="flex items-start justify-center lg:sticky lg:top-20 lg:h-fit relative">
+            <div ref={imageRef} className="flex items-start justify-center lg:sticky lg:top-20 lg:h-fit relative">
             {/* Wishlist Button - Top Right Corner */}
             <button
               onClick={handleToggleWishlist}
-              className={`absolute top-4 right-4 z-10 p-2 sm:p-3 rounded-full transition-all shadow-lg ${
+              className={`absolute top-4 right-4 z-10 p-2 sm:p-3 rounded-full transition-all  ${
                 isFavorite
-                  ? "bg-red-100 text-red-600"
-                  : "bg-white text-gray-600 hover:bg-red-50"
+                  ? " text-black-600"
+                  : " text-black-600 "
               }`}
               title="Add to wishlist"
             >
@@ -276,6 +277,10 @@ export default function ProductDetail() {
                                       ...selectedVariations,
                                       [type]: variation
                                     });
+                                    // Scroll to image section
+                                    setTimeout(() => {
+                                      imageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    }, 100);
                                   }
                                 }}
                                 className={`relative group transition-all duration-300 ${
@@ -288,7 +293,7 @@ export default function ProductDetail() {
                                   <img
                                     src={`${API_BASE_URL}/${variation.images[0].image_path}`}
                                     alt={variation.variation_value}
-                                    className="h-20 sm:h-24 w-20 sm:w-24 rounded-lg object-cover border border-gray-300"
+                                    className="h-24 sm:h-28 w-18 sm:w-18 rounded-lg object-cover border border-gray-300"
                                   />
                                 ) : (
                                   <div className="h-20 sm:h-24 w-20 sm:w-24 rounded-lg bg-gray-200 flex items-center justify-center border border-gray-300 text-xs font-semibold text-gray-600">
@@ -319,6 +324,10 @@ export default function ProductDetail() {
                                       ...selectedVariations,
                                       [type]: variation
                                     });
+                                    // Scroll to image section
+                                    setTimeout(() => {
+                                      imageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    }, 100);
                                   }
                                 }}
                                 className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-normal transition-all duration-300 text-xs sm:text-sm border-2 ${

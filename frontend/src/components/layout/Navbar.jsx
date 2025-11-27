@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { ShoppingCart, Menu, X, Heart, LogOut, Settings, Home, ShoppingBag, User, Compass } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
+import SideDrawer from "./SideDrawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,10 @@ export default function Navbar() {
 
   const handleLogout = () => {
     logout();
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const isActive = (path) => location.pathname === path;
@@ -74,31 +79,36 @@ export default function Navbar() {
       <nav className={`w-full bg-white/70 backdrop-blur-md border-b border-white/20 hidden md:block sticky top-0 z-40 transition-opacity duration-300 ${showHeader ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-3 group">
+            {/* Left Section: Breadcrumb + Hamburger */}
+            <div className="flex items-center gap-4">
+              {/* Hamburger Menu Button */}
+              <button
+                className="p-2 text-gray-700 hover:text-black hover:bg-white/40 rounded-lg transition-all duration-300"
+                onClick={() => setIsOpen(!isOpen)}
+              >
+                {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+
+              {/* Breadcrumb */}
+              {/* <div className="flex items-center gap-2 text-sm text-gray-600 min-w-fit">
+                <Link to="/" className="hover:text-black transition-colors">Home</Link>
+                {location.pathname !== "/" && (
+                  <>
+                    <span>/</span>
+                    <span className="text-gray-900 font-medium capitalize">
+                      {location.pathname.split("/")[1].replace(/([A-Z])/g, " $1")}
+                    </span>
+                  </>
+                )}
+              </div> */}
+            </div>
+
+            {/* Center: Logo */}
+            <Link to="/" className="flex items-center gap-3 group absolute left-1/2 -translate-x-1/2">
               <img src="./assets/img/1114.jpg" alt="Logo" className="h-12 w-auto object-contain" />
             </Link>
 
-            {/* Centered Navigation Links */}
-            <div className="flex-1 flex items-center justify-center">
-              <div className="flex items-center gap-1 bg-white/20 rounded-full px-2 py-1">
-                <Link to="/" className="px-4 py-2 text-gray-700 hover:text-black hover:bg-white/40 rounded-lg transition-all duration-300 font-medium text-sm flex items-center gap-2">
-                  <Home className="h-4 w-4" />
-                  Home
-                </Link>
-                <Link to="/shop" className="px-4 py-2 text-gray-700 hover:text-black hover:bg-white/40 rounded-lg transition-all duration-300 font-medium text-sm flex items-center gap-2">
-                  <ShoppingBag className="h-4 w-4" />
-                  Shop
-                </Link>
-                {user?.role === "admin" && (
-                  <Link to="/admin" className="px-4 py-2 text-black hover:bg-white/40 rounded-lg transition-all duration-300 font-bold text-sm flex items-center gap-2 border border-white/40">
-                    ⚙️ Admin
-                  </Link>
-                )}
-              </div>
-            </div>
-
-            {/* Right Section: Cart & Auth */}
+            {/* Right Section: Wishlist, Cart & Auth */}
             <div className="flex items-center gap-4">
               {/* Wishlist Icon */}
               <Link 
@@ -170,14 +180,6 @@ export default function Navbar() {
                   Sign In
                 </Link>
               )}
-
-              {/* Mobile Menu Button */}
-              <button
-                className="md:hidden p-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-all duration-300"
-                onClick={() => setIsOpen(!isOpen)}
-              >
-                {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
             </div>
           </div>
 
@@ -252,20 +254,18 @@ export default function Navbar() {
       {/* Mobile Bottom Navigation Bar */}
       <nav className="fixed bottom-0 left-0 right-0 md:hidden z-50 bg-white border-t border-gray-200">
         <div className="flex items-center justify-around h-20 px-2">
-          {/* Home */}
-          <Link 
-            to="/" 
-            className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all duration-300 group ${
-              isActive('/') ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
-            }`}
+          <button 
+            onClick={() => setIsOpen(true)}
+            className="flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all duration-300 group text-gray-600 hover:bg-gray-100"
           >
-            <Home className={`h-6 w-6 transition-all duration-300 group-hover:scale-110 ${isActive('/') ? 'animate-bounce' : ''}`} />
-            <span className="text-xs font-medium mt-1">Home</span>
-          </Link>
-
+            <Compass className="h-6 w-6 transition-all duration-300 group-hover:scale-110" />
+            <span className="text-xs font-medium mt-1">Explore</span>
+          </button>
+          
           {/* Shop */}
           <Link 
             to="/shop" 
+            onClick={scrollToTop}
             className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all duration-300 group ${
               isActive('/shop') ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
             }`}
@@ -274,9 +274,23 @@ export default function Navbar() {
             <span className="text-xs font-medium mt-1">Shop</span>
           </Link>
 
+          {/* Home */}
+          <Link 
+            to="/" 
+            onClick={scrollToTop}
+            className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all duration-300 group ${
+              isActive('/') ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Home className={`h-6 w-6 transition-all duration-300 group-hover:scale-110 ${isActive('/') ? 'animate-bounce' : ''}`} />
+            <span className="text-xs font-medium mt-1">Home</span>
+          </Link>
+ 
+
           {/* Wishlist */}
           <Link 
             to="/wishlist" 
+            onClick={scrollToTop}
             className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all duration-300 group relative ${
               isActive('/wishlist') ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
             }`}
@@ -293,6 +307,7 @@ export default function Navbar() {
           {/* Cart */}
           <Link 
             to="/cart" 
+            onClick={scrollToTop}
             className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all duration-300 group relative ${
               isActive('/cart') ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
             }`}
@@ -306,25 +321,31 @@ export default function Navbar() {
             <span className="text-xs font-medium mt-1">Cart</span>
           </Link>
 
+          {/* Categories/Browse */}
+          
+
           {/* Account/Explore */}
-          <Link 
-            to={user ? "/myaccount" : "/login"} 
-            className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all duration-300 group ${
-              isActive('/myaccount') || isActive('/login') ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            {user ? (
-              <>
-                <User className={`h-6 w-6 transition-all duration-300 group-hover:scale-110 ${isActive('/myaccount') ? 'animate-bounce' : ''}`} />
-                <span className="text-xs font-medium mt-1">Account</span>
-              </>
-            ) : (
-              <>
-                <Compass className={`h-6 w-6 transition-all duration-300 group-hover:scale-110 ${isActive('/login') ? 'animate-bounce' : ''}`} />
-                <span className="text-xs font-medium mt-1">Explore</span>
-              </>
-            )}
-          </Link>
+          {user ? (
+            <Link 
+              to="/myaccount" 
+              onClick={scrollToTop}
+              className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all duration-300 group ${
+                isActive('/myaccount') ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <User className={`h-6 w-6 transition-all duration-300 group-hover:scale-110 ${isActive('/myaccount') ? 'animate-bounce' : ''}`} />
+              <span className="text-xs font-medium mt-1">Account</span>
+            </Link>
+          ) : (
+            <Link 
+              to="/login" 
+              onClick={scrollToTop}
+              className="flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all duration-300 group text-gray-600 hover:bg-gray-100"
+            >
+              <User className="h-6 w-6 transition-all duration-300 group-hover:scale-110" />
+              <span className="text-xs font-medium mt-1">Sign In</span>
+            </Link>
+          )}
         </div>
       </nav>
 
@@ -336,6 +357,9 @@ export default function Navbar() {
           }
         }
       `}</style>
+
+      {/* Side Drawer for Categories */}
+      <SideDrawer isOpen={isOpen} onClose={() => setIsOpen(false)} />
     </>
   );
 }

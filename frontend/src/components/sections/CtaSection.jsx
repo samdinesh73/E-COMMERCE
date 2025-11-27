@@ -10,10 +10,10 @@ export default function CtaSection() {
       question: "How do I place an order?",
       answer: "Browse our shop, add items to your cart, and proceed to checkout. Fill in your details and choose your payment method (COD or Razorpay)."
     },
-    {
-      question: "What payment methods do you accept?",
-      answer: "We accept two payment methods: Cash on Delivery (COD) and online payments through Razorpay."
-    },
+    // {
+    //   question: "What payment methods do you accept?",
+    //   answer: "We accept two payment methods: Cash on Delivery (COD) and online payments through Razorpay."
+    // },
     {
       question: "How long does shipping take?",
       answer: "We typically ship orders within 2-3 business days. Delivery time varies based on your location."
@@ -49,7 +49,7 @@ export default function CtaSection() {
       </div>
 
       {/* FAQ Section */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 sm:mb-16">
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-8 sm:mb-12 text-center text-black">Frequently Asked Questions</h2>
         <Accordion type="single" collapsible className="border rounded-lg overflow-hidden">
           {faqs.map((faq, index) => (
