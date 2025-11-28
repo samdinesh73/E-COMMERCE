@@ -220,16 +220,16 @@ export default function ProductCard({ product }) {
         </Link>
 
         {/* Brand/Category */}
-        <p className="text-xs sm:text-sm text-gray-500">
+        {/* <p className="text-xs sm:text-sm text-gray-500">
           {product.brand || "Product"}
-        </p>
+        </p> */}
 
         {/* Price Section */}
         <div className="flex items-center gap-2 pt-1">
           <span className="font-semibold text-black" style={{ fontSize: '0.8rem' }}>
             ₹{parseFloat(product.price).toFixed(2)}
           </span>
-          <span className="text-xs sm:text-sm text-gray-400 line-through">₹{(parseFloat(product.price) * 1.2).toFixed(2)}</span>
+          <span style={{ fontSize: '0.7rem' }} className=" text-gray-400 line-through">₹{(parseFloat(product.price) * 1.2).toFixed(2)}</span>
         </div>
       </div>
 

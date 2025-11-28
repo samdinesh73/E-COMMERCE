@@ -28,7 +28,9 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ["'Poppins'", "ui-sans-serif", "system-ui", "-apple-system", "'Segoe UI'", "Roboto", "'Helvetica Neue'", "Arial", "'Noto Sans'", "sans-serif"],
+        // Primary: Science Gothic (requires you to provide the font files or a host link)
+        // Fallback to Poppins and system sans fonts
+        sans: ["'Science Gothic'", "'Poppins'", "ui-sans-serif", "system-ui", "-apple-system", "'Segoe UI'", "Roboto", "'Helvetica Neue'", "Arial", "'Noto Sans'", "sans-serif"],
       },
       boxShadow: {
         card: "0 2px 8px rgba(0, 0, 0, 0.06)",
