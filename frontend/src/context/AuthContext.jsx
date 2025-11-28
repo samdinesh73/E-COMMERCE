@@ -23,20 +23,45 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const verifyToken = async (tok) => {
+  // Refresh current user profile from server (returns user or null)
+  const refreshUser = async (tok = token) => {
+    if (!tok) return null;
     try {
+      // Use the auth/me endpoint defined in ENDPOINTS.AUTH_ME
       const resp = await fetch(`${API_BASE_URL}${ENDPOINTS.AUTH_ME}`, {
         headers: { Authorization: `Bearer ${tok}` },
       });
-      if (resp.ok) {
-        const data = await resp.json();
+      if (!resp.ok) return null;
+      const data = await resp.json();
+      // Endpoint returns { user: { ... } }
+      if (data?.user) {
         setUser(data.user);
-      } else {
+        return data.user;
+      }
+      // Fallback: if API returns the user object directly
+      if (data && data.id) {
+        setUser(data);
+        return data;
+      }
+      return null;
+    } catch (err) {
+      console.error('Refresh user error:', err);
+      return null;
+    }
+  };
+
+  const verifyToken = async (tok) => {
+    try {
+      // prefer the richer /users/me which includes avatar and phone
+      const userProfile = await refreshUser(tok);
+      if (!userProfile) {
         setToken(null);
         localStorage.removeItem("auth_token");
       }
     } catch (err) {
       console.error("Token verification error:", err);
+      setToken(null);
+      localStorage.removeItem("auth_token");
     } finally {
       setLoading(false);
     }
@@ -56,9 +81,10 @@ export const AuthProvider = ({ children }) => {
       }
 
       const data = await resp.json();
+      // store token then fetch full profile
       setToken(data.token);
-      setUser(data.user);
       localStorage.setItem("auth_token", data.token);
+      await refreshUser(data.token);
       return data;
     } catch (err) {
       throw err;
@@ -79,9 +105,10 @@ export const AuthProvider = ({ children }) => {
       }
 
       const data = await resp.json();
+      // store token then fetch full profile
       setToken(data.token);
-      setUser(data.user);
       localStorage.setItem("auth_token", data.token);
+      await refreshUser(data.token);
       return data;
     } catch (err) {
       throw err;
@@ -95,7 +122,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, signup, signin, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, signup, signin, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL, ENDPOINTS } from "../constants/config";
-import { ChevronDown } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 export default function MyAccount() {
   const { user, token, logout } = useAuth();
@@ -11,6 +11,7 @@ export default function MyAccount() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
     if (!token) {
@@ -18,6 +19,7 @@ export default function MyAccount() {
       return;
     }
 
+    fetchUserProfile();
     fetchOrders();
   }, [token]);
 
@@ -41,6 +43,23 @@ export default function MyAccount() {
     }
   };
 
+  const fetchUserProfile = async () => {
+    try {
+      const resp = await fetch(`${API_BASE_URL}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!resp.ok) {
+        throw new Error("Failed to load user profile");
+      }
+
+      const data = await resp.json();
+      setUserProfile(data.user);
+    } catch (err) {
+      console.error("Fetch user profile error:", err);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate("/");
@@ -59,184 +78,68 @@ export default function MyAccount() {
         </button>
       </div>
 
-      {/* User Profile Card */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-1 border rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Profile Information</h2>
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm text-gray-600">Name</label>
-              <p className="font-semibold">{user?.name}</p>
-            </div>
-            <div>
-              <label className="text-sm text-gray-600">Email</label>
-              <p className="font-semibold">{user?.email}</p>
-            </div>
-            <div>
-              <label className="text-sm text-gray-600">User ID</label>
-              <p className="font-semibold text-sm text-gray-500">#{user?.id}</p>
-            </div>
+      {/* User Profile Banner + Menu (Light Mode) */}
+      <div className="mb-8">
+        <div className="bg-white rounded-lg shadow-sm p-4 flex items-center gap-4">
+          <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-3xl font-semibold text-gray-700 overflow-hidden">
+            {userProfile?.avatar ? (
+              // Check if avatar is a URL (starts with /) or an emoji
+              userProfile.avatar.startsWith('/') ? (
+                <img src={`${API_BASE_URL}${userProfile.avatar}`} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                // Display emoji avatar
+                <span className="text-4xl">{userProfile.avatar}</span>
+              )
+            ) : (
+              user?.name ? user.name.charAt(0).toUpperCase() : 'U'
+            )}
           </div>
-        </div>
-
-        {/* Order Summary Card */}
-        <div className="lg:col-span-2 border rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold">{orders.length}</p>
-              <p className="text-sm text-gray-600">Total Orders</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold">
-                {orders.filter((o) => o.status === "pending").length}
-              </p>
-              <p className="text-sm text-gray-600">Pending</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold">
-                ₹ {orders.reduce((sum, o) => sum + Number(o.total_price || 0), 0).toFixed(2)}
-              </p>
-              <p className="text-sm text-gray-600">Total Spent</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Orders Table */}
-      <div className="border rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-4">Order History</h2>
-
-        {loading && <p className="text-center py-8 text-gray-600">Loading orders...</p>}
-
-        {error && <p className="text-center py-8 text-red-600">{error}</p>}
-
-        {!loading && !error && orders.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-600 mb-4">No orders yet.</p>
-            <button
-              onClick={() => navigate("/shop")}
-              className="px-6 py-2 bg-black text-white rounded hover:bg-gray-800"
-            >
-              Start Shopping
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && orders.length > 0 && (
-          <div className="space-y-4">
-            {orders.map((order) => (
-              <div key={order.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                {/* Order Header - Clickable to expand */}
-                <button
-                  onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
-                  className="w-full px-4 py-4 hover:bg-gray-50 flex items-center justify-between"
-                >
-                  <div className="flex-1 text-left">
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                      <div>
-                        <p className="text-xs text-gray-600">Order ID</p>
-                        <p className="font-semibold">#{order.id}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-600">Date</p>
-                        <p className="font-semibold">{new Date(order.created_at).toLocaleDateString()}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-600">Amount</p>
-                        <p className="font-semibold">₹ {Number(order.total_price).toFixed(2)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-600">Payment</p>
-                        <p className="font-semibold capitalize">{order.payment_method}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-600">Status</p>
-                        <span
-                          className={`inline-block px-3 py-1 rounded text-xs font-semibold ${
-                            order.status === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : order.status === "completed"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronDown
-                    className={`h-5 w-5 text-gray-600 transition-transform ${
-                      expandedOrderId === order.id ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-
-                {/* Order Details - Expanded View */}
-                {expandedOrderId === order.id && (
-                  <div className="border-t border-gray-200 bg-gray-50 px-4 py-4 space-y-4">
-                    {/* Shipping Address */}
-                    <div>
-                      <h4 className="font-semibold mb-2">Shipping Address</h4>
-                      <p className="text-sm text-gray-700">
-                        {order.shipping_address}, {order.city} - {order.pincode}
-                      </p>
-                    </div>
-
-                    {/* Order Items */}
-                    <div>
-                      <h4 className="font-semibold mb-3">Items Ordered</h4>
-                      <div className="space-y-3">
-                        {order.items && order.items.length > 0 ? (
-                          order.items.map((item, idx) => (
-                            <div key={idx} className="bg-white p-3 rounded border border-gray-200">
-                              <div className="flex justify-between items-start mb-2">
-                                <div className="flex-1">
-                                  <p className="font-semibold text-gray-900">{item.product_name || item.name || "Unknown Product"}</p>
-                                  <p className="text-sm text-gray-600 mt-1">Quantity: <span className="font-medium">{item.quantity}</span></p>
-                                </div>
-                                <p className="font-semibold text-gray-900 whitespace-nowrap ml-4">₹ {(Number(item.price) * Number(item.quantity)).toFixed(2)}</p>
-                              </div>
-
-                              {/* Show Variations if present */}
-                              {item.selectedVariations && Object.keys(item.selectedVariations).length > 0 && (
-                                <div className="mt-3 pt-3 border-t border-gray-200">
-                                  <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Selected Options:</p>
-                                  <div className="space-y-1.5">
-                                    {Object.entries(item.selectedVariations).map(([type, variation]) => {
-                                      const variationValue = typeof variation === 'object' 
-                                        ? (variation.variation_value || variation.name || '-') 
-                                        : variation;
-                                      return (
-                                        <div key={type} className="text-xs text-gray-600 flex items-start gap-2">
-                                          <span className="font-medium text-gray-800">{type}:</span>
-                                          <span className="text-gray-700">{variationValue}</span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Show unit price */}
-                              <div className="mt-2 pt-2 border-t border-gray-100">
-                                <p className="text-xs text-gray-600">Unit Price: <span className="font-medium text-gray-900">₹ {Number(item.price).toFixed(2)}</span></p>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded">No items in this order</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
+          <div className="flex-1">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-lg font-semibold text-gray-900">{userProfile?.name || user?.name}</p>
+                <p className="text-sm text-gray-600">{userProfile?.email || user?.email}</p>
+                {(userProfile?.phone || user?.phone) && <p className="text-sm text-gray-600 mt-1">{userProfile?.phone || user?.phone}</p>}
               </div>
-            ))}
+              <button onClick={() => navigate('/account/edit')} className="text-yellow-600 font-medium">Edit</button>
+            </div>
           </div>
-        )}
+        </div>
+
+        <div className="mt-4 bg-white rounded-lg border overflow-hidden">
+          {[
+            'Orders',
+            'Customer Care',
+          
+      
+            'My Rewards',
+            'Address',
+           
+            
+            'How To Return',
+            'Terms & Conditions',
+            'Privacy Policy'
+          
+          ].map((label) => (
+            <button
+              key={label}
+              onClick={() => {
+                if (label === 'Orders') navigate('/orders');
+                if (label === 'Address') navigate('/addresses');
+                if (label === 'How To Return') navigate('/how-to-return');
+                if (label === 'Terms & Conditions') navigate('/terms-conditions');
+                if (label === 'Privacy Policy') navigate('/privacy-policy');
+              }}
+              className={`w-full flex items-center justify-between px-4 py-4 border-b last:border-b-0 hover:bg-gray-50 text-left`}
+            >
+              <span className="text-sm text-gray-900">{label}</span>
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            </button>
+          ))}
+        </div>
       </div>
+
+      {/* Orders moved to separate /orders page */}
     </div>
   );
 }

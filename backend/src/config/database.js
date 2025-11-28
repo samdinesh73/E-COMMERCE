@@ -138,11 +138,94 @@ const ensureParentIdColumn = () => {
   });
 };
 
+// Ensure phone and avatar columns exist in users table for user profiles
+const ensureUserColumnsExist = () => {
+  const checkSql = `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'users' AND COLUMN_NAME IN ('phone', 'avatar')`;
+  db.query(checkSql, [dbName], (err, results) => {
+    if (err) {
+      console.error("Error checking user columns:", err.message);
+      return;
+    }
+    const hasPhone = results.some(col => col.COLUMN_NAME === 'phone');
+    const hasAvatar = results.some(col => col.COLUMN_NAME === 'avatar');
+
+    // Add phone column if missing
+    if (!hasPhone) {
+      console.log("'phone' column missing in users table -> adding it...");
+      db.query("ALTER TABLE users ADD COLUMN phone VARCHAR(20) AFTER email", (alterErr) => {
+        if (alterErr) {
+          console.error("Failed to add 'phone' column:", alterErr.message);
+        } else {
+          console.log("✅ Added 'phone' column to users table.");
+        }
+      });
+    } else {
+      console.log("✅ phone column already exists in users table.");
+    }
+
+    // Add avatar column if missing
+    if (!hasAvatar) {
+      console.log("'avatar' column missing in users table -> adding it...");
+      db.query("ALTER TABLE users ADD COLUMN avatar VARCHAR(255) AFTER phone", (alterErr) => {
+        if (alterErr) {
+          console.error("Failed to add 'avatar' column:", alterErr.message);
+        } else {
+          console.log("✅ Added 'avatar' column to users table.");
+        }
+      });
+    } else {
+      console.log("✅ avatar column already exists in users table.");
+    }
+  });
+};
+
+// Ensure user_addresses table exists for managing multiple addresses per user
+const ensureUserAddressesTable = () => {
+  const checkTableSql = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'user_addresses'`;
+  db.query(checkTableSql, [dbName], (err, results) => {
+    if (err) {
+      console.error("Error checking user_addresses table:", err.message);
+      return;
+    }
+    if (results.length === 0) {
+      console.log("user_addresses table missing -> creating it...");
+      const createTableSql = `
+        CREATE TABLE user_addresses (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          address_line VARCHAR(500) NOT NULL,
+          city VARCHAR(100),
+          state VARCHAR(100),
+          pincode VARCHAR(20),
+          country VARCHAR(100),
+          is_default BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+          INDEX idx_user_id (user_id),
+          INDEX idx_is_default (is_default)
+        )
+      `;
+      db.query(createTableSql, (createErr) => {
+        if (createErr) {
+          console.error("Failed to create user_addresses table:", createErr.message);
+        } else {
+          console.log("✅ Created user_addresses table successfully.");
+        }
+      });
+    } else {
+      console.log("✅ user_addresses table already exists.");
+    }
+  });
+};
+
 // Run checks after a short delay to allow schema availability on startup.
 setTimeout(ensureDescriptionColumn, 500);
 setTimeout(ensureProductImagesTable, 1000);
 setTimeout(ensurePhoneColumn, 1500);
 setTimeout(ensureParentIdColumn, 2000);
+setTimeout(ensureUserColumnsExist, 2500);
+setTimeout(ensureUserAddressesTable, 3000);
 
 // Export promise-based connection
 module.exports = dbPromise;

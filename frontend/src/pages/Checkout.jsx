@@ -27,11 +27,68 @@ export default function Checkout() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [method, setMethod] = useState("cod");
-  const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", city: "", pincode: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", city: "", pincode: "", state: "Tamil Nadu", country: "India" });
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+    // Fetch addresses if logged in
+    useEffect(() => {
+      if (token) {
+        fetch(`${API_BASE_URL}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((resp) => resp.json())
+          .then((data) => {
+            setAddresses(data.addresses || []);
+            // Pre-select default address
+            if (data.addresses && data.addresses.length > 0) {
+              const defaultAddr = data.addresses.find(a => a.is_default) || data.addresses[0];
+              setSelectedAddressId(defaultAddr.id);
+            }
+            // Auto-fill form from user profile
+            if (data.user) {
+              setForm(f => ({
+                ...f,
+                name: data.user.name || "",
+                email: data.user.email || "",
+                phone: data.user.phone || ""
+              }));
+            }
+          });
+      }
+    }, [token]);
   const [isGuest, setIsGuest] = useState(!token);
   const total = getTotalPrice();
 
   const handleChange = (e) => setForm((s) => ({ ...s, [e.target.name]: e.target.value }));
+
+  // Save new address if user has none
+  const saveNewAddress = async () => {
+    if (!token) return;
+    const resp = await fetch(`${API_BASE_URL}/users/addresses`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        address_line: form.address,
+        city: form.city,
+        state: form.state || "Tamil Nadu",
+        pincode: form.pincode,
+        country: form.country || "India",
+        is_default: true,
+      }),
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      setAddresses([data]);
+      setSelectedAddressId(data.id);
+      setShowAddressForm(false);
+      return data.id;
+    }
+    return null;
+  };
 
   const saveOrder = async (paymentMethod) => {
     try {
@@ -44,44 +101,45 @@ export default function Checkout() {
         headers.Authorization = `Bearer ${token}`;
       }
 
+      // Use selected address if available
+      let shipping_address = form.address;
+      let city = form.city;
+      let pincode = form.pincode;
+      if (token && addresses.length > 0 && selectedAddressId) {
+        const addr = addresses.find(a => a.id === selectedAddressId);
+        if (addr) {
+          shipping_address = addr.address_line;
+          city = addr.city;
+          pincode = addr.pincode;
+        }
+      }
       const resp = await fetch(`${API_BASE_URL}${ENDPOINTS.ORDERS}`, {
         method: "POST",
         headers,
         body: JSON.stringify({
           total_price: total,
-          shipping_address: form.address,
-          city: form.city,
-          pincode: form.pincode,
+          shipping_address,
+          city,
+          pincode,
           payment_method: paymentMethod,
-          // For authenticated users
           ...(token && {
             full_name: form.name,
             email: form.email,
             phone: form.phone,
           }),
-          // For guest users
           ...(!token && {
             guest_name: form.name,
             guest_email: form.email,
             phone: form.phone,
           }),
-          items: items.map(item => {
-            console.log(`📦 Checkout Item:`, {
-              id: item.id,
-              name: item.name,
-              price: item.price,
-              quantity: item.quantity,
-              selectedVariations: item.selectedVariations
-            });
-            return {
-              product_id: item.id,
-              name: item.name,
-              price: item.price,
-              quantity: item.quantity,
-              image: item.image,
-              selectedVariations: item.selectedVariations || {}
-            };
-          }),
+          items: items.map(item => ({
+            product_id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image,
+            selectedVariations: item.selectedVariations || {}
+          })),
         }),
       });
 
@@ -204,13 +262,21 @@ export default function Checkout() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.phone || !form.address) {
-      alert("Please fill name, email, phone and address");
+    if (!form.name || !form.email || !form.phone) {
+      alert("Please fill name, email, phone");
       return;
     }
-
+    // If no addresses, save new address first
+    if (token && addresses.length === 0) {
+      if (!form.address || !form.city || !form.pincode) {
+        alert("Please fill address, city, pincode");
+        return;
+      }
+      const addrId = await saveNewAddress();
+      setSelectedAddressId(addrId);
+    }
     if (method === "cod") {
       handleCOD();
     } else {
@@ -246,51 +312,120 @@ export default function Checkout() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Full Name</label>
-                <input name="name" value={form.name} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <input 
-                  type="email" 
-                  name="email" 
-                  value={form.email || ""} 
-                  onChange={handleChange} 
-                  className="w-full border px-3 py-2 rounded" 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Phone</label>
-                <input name="phone" value={form.phone} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Address</label>
-                <textarea name="address" value={form.address} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <input name="city" value={form.city} onChange={handleChange} placeholder="City" className="w-full border px-3 py-2 rounded" />
-                <input name="pincode" value={form.pincode} onChange={handleChange} placeholder="Pincode" className="w-full border px-3 py-2 rounded" />
-              </div>
+            {/* Address selection logic */}
+            {token && addresses.length > 0 && !showAddressForm ? (
+              <form onSubmit={handleSubmit} className="mb-6 space-y-4">
+                <h3 className="font-semibold mb-2">Select Address</h3>
+                {addresses.map(addr => (
+                  <div
+                    key={addr.id}
+                    className={`border rounded p-4 mb-2 flex items-center justify-between cursor-pointer ${addr.is_default ? 'bg-green-50 border-green-400' : ''}`}
+                    onClick={() => setSelectedAddressId(addr.id)}
+                  >
+                    <div>
+                      {addr.is_default && <span className="px-2 py-1 bg-green-600 text-white rounded text-xs mr-2">DEFAULT</span>}
+                      <span className="font-bold">{user?.name}</span>
+                      <div className="text-gray-700">{addr.address_line}, {addr.city}, {addr.state}, {addr.pincode}, {addr.country}</div>
+                    </div>
+                    <div onClick={e => e.stopPropagation()}>
+                      <input type="radio" name="selectedAddress" checked={selectedAddressId === addr.id} onChange={() => setSelectedAddressId(addr.id)} />
+                    </div>
+                  </div>
+                ))}
+                <button type="button" className="text-blue-700 mt-2" onClick={() => setShowAddressForm(true)}>Add new address</button>
 
-              <div className="mt-4">
-                <h3 className="font-semibold mb-2">Payment Method</h3>
-                <label className="flex items-center gap-2">
-                  <input type="radio" name="method" checked={method === "razorpay"} onChange={() => setMethod("razorpay")} /> Razorpay
-                </label>
-                <label className="flex items-center gap-2 mt-2">
-                  <input type="radio" name="method" checked={method === "cod"} onChange={() => setMethod("cod")} /> Cash on Delivery
-                </label>
-              </div>
+                {/* Manual entry for name, email, phone */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Full Name</label>
+                  <input name="name" value={form.name} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Email</label>
+                  <input 
+                    type="email" 
+                    name="email" 
+                    value={form.email || ""} 
+                    onChange={handleChange} 
+                    className="w-full border px-3 py-2 rounded" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Phone</label>
+                  <input name="phone" value={form.phone} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
+                </div>
 
-              <div className="mt-6 flex gap-4">
-                <button type="submit" disabled={loading} className="px-6 py-3 bg-black text-white rounded">
-                  {loading ? "Processing..." : `Pay ₹ ${total.toFixed(2)}`}
-                </button>
-                <button type="button" onClick={() => navigate(-1)} className="px-6 py-3 border rounded">Back</button>
-              </div>
-            </form>
+                <div className="mt-4">
+                  <h3 className="font-semibold mb-2">Payment Method</h3>
+                  <label className="flex items-center gap-2">
+                    <input type="radio" name="method" checked={method === "razorpay"} onChange={() => setMethod("razorpay")} /> Razorpay
+                  </label>
+                  <label className="flex items-center gap-2 mt-2">
+                    <input type="radio" name="method" checked={method === "cod"} onChange={() => setMethod("cod")} /> Cash on Delivery
+                  </label>
+                </div>
+
+                <div className="mt-6 flex gap-4">
+                  <button type="submit" disabled={loading || !selectedAddressId} className="px-6 py-3 bg-black text-white rounded">
+                    {loading ? "Processing..." : `Pay ₹ ${total.toFixed(2)}`}
+                  </button>
+                  <button type="button" onClick={() => navigate(-1)} className="px-6 py-3 border rounded">Back</button>
+                </div>
+              </form>
+            ) : null}
+
+            {/* Address form (shown if no addresses or adding new) */}
+            {(!token || addresses.length === 0 || showAddressForm) && (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Full Name</label>
+                  <input name="name" value={form.name} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Email</label>
+                  <input 
+                    type="email" 
+                    name="email" 
+                    value={form.email || ""} 
+                    onChange={handleChange} 
+                    className="w-full border px-3 py-2 rounded" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Phone</label>
+                  <input name="phone" value={form.phone} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Address</label>
+                  <textarea name="address" value={form.address} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <input name="city" value={form.city} onChange={handleChange} placeholder="City" className="w-full border px-3 py-2 rounded" />
+                  <input name="pincode" value={form.pincode} onChange={handleChange} placeholder="Pincode" className="w-full border px-3 py-2 rounded" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <input name="state" value={form.state} onChange={handleChange} placeholder="State" className="w-full border px-3 py-2 rounded" />
+                  <input name="country" value={form.country} onChange={handleChange} placeholder="Country" className="w-full border px-3 py-2 rounded" />
+                </div>
+
+                <div className="mt-4">
+                  <h3 className="font-semibold mb-2">Payment Method</h3>
+                  <label className="flex items-center gap-2">
+                    <input type="radio" name="method" checked={method === "razorpay"} onChange={() => setMethod("razorpay")} /> Razorpay
+                  </label>
+                  <label className="flex items-center gap-2 mt-2">
+                    <input type="radio" name="method" checked={method === "cod"} onChange={() => setMethod("cod")} /> Cash on Delivery
+                  </label>
+                </div>
+
+                <div className="mt-6 flex gap-4">
+                  <button type="submit" disabled={loading} className="px-6 py-3 bg-black text-white rounded">
+                    {loading ? "Processing..." : `Pay ₹ ${total.toFixed(2)}`}
+                  </button>
+                  <button type="button" onClick={() => navigate(-1)} className="px-6 py-3 border rounded">Back</button>
+                </div>
+              </form>
+            )}
           </div>
 
           <aside className="p-4 border rounded">

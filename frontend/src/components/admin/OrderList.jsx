@@ -70,7 +70,10 @@ export default function OrderList() {
 
     try {
       const deletePromises = Array.from(selectedOrders).map((orderId) => {
-        return axios.delete(`${API_BASE_URL}/orders/${orderId}`);
+        // selected orderId format is "<id>-auth" or "<id>-guest";
+        // backend admin delete endpoint expects just the numeric id at /orders/admin/order/:id
+        const numericId = String(orderId).split("-")[0];
+        return axios.delete(`${API_BASE_URL}/orders/admin/order/${numericId}`);
       });
 
       await Promise.all(deletePromises);

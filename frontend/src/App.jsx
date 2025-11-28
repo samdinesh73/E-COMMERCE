@@ -11,11 +11,18 @@ import Checkout from "./pages/Checkout";
 import ThankYou from "./pages/ThankYou";
 import LoginSignup from "./pages/LoginSignup";
 import MyAccount from "./pages/MyAccount";
+import AccountEdit from "./pages/AccountEdit";
+import Addresses from "./pages/Addresses";
 import Wishlist from "./pages/Wishlist";
 import CategoryPage from "./pages/CategoryPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import OrderDetail from "./pages/admin/OrderDetail";
+import UserOrderDetail from "./pages/OrderDetail";
+import Orders from "./pages/Orders";
 import UserDetail from "./pages/admin/UserDetail";
+import HowToReturn from "./pages/HowToReturn";
+import TermsConditions from "./pages/TermsConditions";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 import { WishlistProvider } from "./context/WishlistContext";
@@ -40,7 +47,7 @@ function App() {
                   <Route
                     path="/admin"
                     element={
-                      <ProtectedRoute requiredRole="admin">
+                      <ProtectedRoute requiredRole={"admin"}>
                         <AdminDashboard />
                       </ProtectedRoute>
                     }
@@ -48,7 +55,7 @@ function App() {
                   <Route
                     path="/admin/order/:orderId"
                     element={
-                      <ProtectedRoute requiredRole="admin">
+                      <ProtectedRoute requiredRole={"admin"}>
                         <OrderDetail />
                       </ProtectedRoute>
                     }
@@ -56,7 +63,7 @@ function App() {
                   <Route
                     path="/admin/user/:userId"
                     element={
-                      <ProtectedRoute requiredRole="admin">
+                      <ProtectedRoute requiredRole={"admin"}>
                         <UserDetail />
                       </ProtectedRoute>
                     }
@@ -65,6 +72,41 @@ function App() {
                   <Route path="/thank-you" element={<ThankYou />} />
                   <Route path="/login" element={<LoginSignup />} />
                   <Route path="/myaccount" element={<MyAccount />} />
+                  <Route
+                    path="/account/edit"
+                    element={
+                      <ProtectedRoute>
+                        <AccountEdit />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/orders"
+                    element={
+                      <ProtectedRoute>
+                        <Orders />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/order/:orderId"
+                    element={
+                      <ProtectedRoute>
+                        <UserOrderDetail />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/addresses"
+                    element={
+                      <ProtectedRoute>
+                        <Addresses />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="/how-to-return" element={<HowToReturn />} />
+                  <Route path="/terms-conditions" element={<TermsConditions />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 </Routes>
               </main>
               <Footer />

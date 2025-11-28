@@ -49,7 +49,7 @@ export default function CtaSection() {
       </div>
 
       {/* FAQ Section */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 sm:mb-16">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 ">
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-8 sm:mb-12 text-center text-black">Frequently Asked Questions</h2>
         <Accordion type="single" collapsible className="border rounded-lg overflow-hidden">
           {faqs.map((faq, index) => (

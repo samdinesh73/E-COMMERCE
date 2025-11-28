@@ -1,5 +1,5 @@
 import React from "react";
-import { NAVIGATION_LINKS } from "../../constants/config";
+import { NAVIGATION_LINKS, API_BASE_URL } from "../../constants/config";
 import { Link, useLocation } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
@@ -143,8 +143,19 @@ export default function Navbar() {
                 <DropdownMenu>
                   <DropdownMenuTrigger className="outline-none">
                     <Avatar className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-black transition-all border border-gray-300">
-                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} />
-                      <AvatarFallback className="bg-black text-white font-semibold">{getInitials(user.name)}</AvatarFallback>
+                      {user?.avatar ? (
+                        // If avatar looks like an image path or url, show it; if it's emoji, show as fallback
+                        (typeof user.avatar === 'string' && (user.avatar.startsWith('http') || user.avatar.startsWith('/') || user.avatar.includes('uploads') || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(user.avatar))) ? (
+                          <AvatarImage src={user.avatar.startsWith('http') ? user.avatar : `${API_BASE_URL}${user.avatar.startsWith('/') ? user.avatar : `/${user.avatar}`}`} />
+                        ) : (
+                          <AvatarFallback className="bg-white text-3xl text-center">{user.avatar}</AvatarFallback>
+                        )
+                      ) : (
+                        <>
+                          <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`} />
+                          <AvatarFallback className="bg-black text-white font-semibold">{getInitials(user.name)}</AvatarFallback>
+                        </>
+                      )}
                     </Avatar>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200 z-[999]">
@@ -215,7 +226,7 @@ export default function Navbar() {
                   </span>
                 )}
               </Link>
-              {user?.role === "admin" && (
+              {user?.role === 'admin' && (
                 <Link 
                   to="/admin" 
                   onClick={() => setIsOpen(false)} 
