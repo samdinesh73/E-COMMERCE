@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
 import { API_BASE_URL } from "../../constants/config";
 import { getImageUrl } from "../../utils/imageHelper";
 import ProductCard from "../common/ProductCard";
@@ -161,14 +162,18 @@ export default function ProductList({
               }}
             >
               {filteredProducts.map((product) => (
-                <div key={product.id} className="relative group rounded-lg overflow-hidden bg-gray-100 aspect-[9/16 ]">
-                  <img 
+                <Link
+                  to={`/product/${product.id}`}
+                  key={product.id}
+                  className="relative group rounded-lg overflow-hidden bg-gray-100 aspect-[9/16] block cursor-pointer"
+                >
+                  <img
                     src={getImageUrl(product.image)}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
-                </div>
+                </Link>
               ))}
             </div>
           ) : (
