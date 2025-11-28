@@ -25,6 +25,22 @@ export default function Shop() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Initialize selected variations from query params (e.g., ?color=Red or ?color=Red,Blue)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const colorParam = params.get("color");
+      if (colorParam) {
+        const values = colorParam.split(",").map((v) => v.trim()).filter(Boolean);
+        if (values.length > 0) {
+          setSelectedVariations((prev) => ({ ...prev, color: values }));
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header Section */}

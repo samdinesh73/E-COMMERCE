@@ -9,7 +9,8 @@ import DeleteProductConfirm from "../../components/admin/DeleteProductConfirm";
 import UserList from "../../components/admin/UserList";
 import CategoryManager from "../../components/admin/CategoryManager";
 import OrderList from "../../components/admin/OrderList";
-import { Plus, List, Edit2, Trash2, Package, Users, ShoppingCart, TrendingUp, Loader, AlertCircle, Tag } from "lucide-react";
+import ColorManager from "../../components/admin/ColorManager";
+import { Plus, List, Edit2, Trash2, Package, Users, ShoppingCart, TrendingUp, Loader, AlertCircle, Tag, Palette } from "lucide-react";
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState("dashboard");
@@ -91,6 +92,7 @@ export default function AdminDashboard() {
     { id: "create", label: "Create Product", icon: Plus },
     { id: "list", label: "All Products", icon: List },
     { id: "categories", label: "Categories", icon: Tag },
+    { id: "colors", label: "Colors", icon: Palette },
     { id: "orders", label: "Orders", icon: ShoppingCart },
     { id: "users", label: "Users", icon: Users },
     { id: "edit", label: "Edit Product", icon: Edit2 },
@@ -256,6 +258,9 @@ export default function AdminDashboard() {
 
                 {/* Categories Tab */}
                 {tab === "categories" && <CategoryManager />}
+
+                {/* Colors Tab */}
+                {tab === "colors" && <ColorManager />}
 
                 {/* Users Tab */}
                 {tab === "users" && <UserList />}

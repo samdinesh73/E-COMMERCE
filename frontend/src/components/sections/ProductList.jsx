@@ -71,7 +71,7 @@ export default function ProductList({
     for (const [variationType, selectedValues] of Object.entries(selectedVariations)) {
       const hasMatchingVariation = variations.some(
         (variation) =>
-          variation.variation_type === variationType &&
+          (variation.variation_type || '').toLowerCase() === String(variationType).toLowerCase() &&
           selectedValues.includes(variation.variation_value)
       );
       

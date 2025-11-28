@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { ShoppingCart, Menu, X, Heart, LogOut, Settings, Home, ShoppingBag, User, Compass } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
+import LordIcon from "../ui/LordIcon";
 import SideDrawer from "./SideDrawer";
 import {
   DropdownMenu,
