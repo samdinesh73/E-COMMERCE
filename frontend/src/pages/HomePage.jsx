@@ -8,16 +8,18 @@ import CtaSection from "../components/sections/CtaSection";
 import FeatureProduct from "../components/sections/FeatureProduct";
 import FeaturesSection from "../components/sections/FeaturesSection";
 import ProductSlider from "../components/sections/ProductSlider";
+import ParallaxScrollSection from "../components/sections/ParallaxScrollSection";
 
 
 export default function HomePage() {
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-white min-h-screen home-page">
       <BannerSlider />
       {/* <HeroSection /> */}
       <CategoriesSection />
       <CategoryProductsTabs />
       <FeaturesSection/>
+      <ParallaxScrollSection />
       <ProductSlider />
       <RecentProducts />
 
