@@ -1,15 +1,29 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import CouponInput from "../components/CouponInput";
 import { getImageUrl } from "../utils/imageHelper";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { API_BASE_URL } from "../constants/config";
 
 export default function Cart() {
-  const { items, updateQuantity, removeFromCart, getTotalPrice, clearCart } = useCart();
+  const { 
+    items, 
+    updateQuantity, 
+    removeFromCart, 
+    getTotalPrice, 
+    clearCart,
+    appliedCoupon,
+    getDiscountAmount,
+    getFinalTotal,
+    applyCoupon,
+    removeCoupon
+  } = useCart();
   const navigate = useNavigate();
 
-  const total = getTotalPrice();
+  const subtotal = getTotalPrice();
+  const discount = getDiscountAmount();
+  const total = getFinalTotal();
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 sm:py-8 lg:py-12">
@@ -197,11 +211,25 @@ export default function Cart() {
                   Order Summary
                 </h3>
 
+                {/* Coupon Input */}
+                <CouponInput 
+                  orderTotal={subtotal}
+                  onCouponApply={applyCoupon}
+                  appliedCoupon={appliedCoupon}
+                  onRemoveCoupon={removeCoupon}
+                />
+
                 <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-600">Subtotal ({items.length} items)</span>
-                    <span className="font-semibold text-gray-900">₹{total.toFixed(0)}</span>
+                    <span className="font-semibold text-gray-900">₹{subtotal.toFixed(0)}</span>
                   </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between items-center text-sm bg-green-50 p-2 rounded">
+                      <span className="text-green-700 font-medium">Discount</span>
+                      <span className="font-semibold text-green-700">-₹{discount.toFixed(0)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-600">Shipping</span>
                     <span className="font-semibold text-green-600">Free</span>

@@ -22,7 +22,7 @@ const loadRazorpayScript = () => {
 };
 
 export default function Checkout() {
-  const { items, getTotalPrice, clearCart } = useCart();
+  const { items, getTotalPrice, getFinalTotal, getDiscountAmount, appliedCoupon, clearCart } = useCart();
   const { user, token } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -58,7 +58,9 @@ export default function Checkout() {
       }
     }, [token]);
   const [isGuest, setIsGuest] = useState(!token);
-  const total = getTotalPrice();
+  const subtotal = getTotalPrice();
+  const discount = getDiscountAmount();
+  const total = getFinalTotal();
 
   const handleChange = (e) => setForm((s) => ({ ...s, [e.target.name]: e.target.value }));
 
@@ -118,6 +120,9 @@ export default function Checkout() {
         headers,
         body: JSON.stringify({
           total_price: total,
+          subtotal: subtotal,
+          discount_amount: discount,
+          coupon_id: appliedCoupon?.coupon?.id || null,
           shipping_address,
           city,
           pincode,
@@ -443,9 +448,19 @@ export default function Checkout() {
               ))}
             </div>
 
-            <div className="mt-4 border-t pt-4">
-              <div className="flex justify-between font-bold">
-                <span>Total</span>
+            <div className="mt-4 border-t pt-4 space-y-3">
+              <div className="flex justify-between">
+                <span>Subtotal ({items.length} items)</span>
+                <span>₹ {subtotal.toFixed(2)}</span>
+              </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-green-600 font-medium bg-green-50 p-2 rounded">
+                  <span>Discount ({appliedCoupon?.coupon?.code})</span>
+                  <span>-₹ {discount.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-bold text-lg border-t pt-3">
+                <span>Total Amount</span>
                 <span>₹ {total.toFixed(2)}</span>
               </div>
             </div>

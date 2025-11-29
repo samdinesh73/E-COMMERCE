@@ -10,7 +10,8 @@ import UserList from "../../components/admin/UserList";
 import CategoryManager from "../../components/admin/CategoryManager";
 import OrderList from "../../components/admin/OrderList";
 import ColorManager from "../../components/admin/ColorManager";
-import { Plus, List, Edit2, Trash2, Package, Users, ShoppingCart, TrendingUp, Loader, AlertCircle, Tag, Palette } from "lucide-react";
+import CouponManager from "../../components/admin/CouponManager";
+import { Plus, List, Edit2, Trash2, Package, Users, ShoppingCart, TrendingUp, Loader, AlertCircle, Tag, Palette, Ticket } from "lucide-react";
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState("dashboard");
@@ -93,6 +94,7 @@ export default function AdminDashboard() {
     { id: "list", label: "All Products", icon: List },
     { id: "categories", label: "Categories", icon: Tag },
     { id: "colors", label: "Colors", icon: Palette },
+    { id: "coupons", label: "Coupons", icon: Ticket },
     { id: "orders", label: "Orders", icon: ShoppingCart },
     { id: "users", label: "Users", icon: Users },
     { id: "edit", label: "Edit Product", icon: Edit2 },
@@ -261,6 +263,9 @@ export default function AdminDashboard() {
 
                 {/* Colors Tab */}
                 {tab === "colors" && <ColorManager />}
+
+                {/* Coupons Tab */}
+                {tab === "coupons" && <CouponManager />}
 
                 {/* Users Tab */}
                 {tab === "users" && <UserList />}

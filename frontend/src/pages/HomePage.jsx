@@ -9,6 +9,7 @@ import FeatureProduct from "../components/sections/FeatureProduct";
 import FeaturesSection from "../components/sections/FeaturesSection";
 import ProductSlider from "../components/sections/ProductSlider";
 import ParallaxScrollSection from "../components/sections/ParallaxScrollSection";
+import HoverCardSection from "../components/sections/HoverCardSection";
 
 
 export default function HomePage() {
@@ -20,6 +21,7 @@ export default function HomePage() {
       <CategoryProductsTabs />
       <FeaturesSection/>
       <ParallaxScrollSection />
+      <HoverCardSection />
       <ProductSlider />
       <RecentProducts />
 

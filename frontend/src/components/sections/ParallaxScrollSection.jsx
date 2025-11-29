@@ -8,21 +8,21 @@ const ParallaxScrollSection = () => {
   const contentData = [
     {
       id: 1,
-      image: "https://images.squarespace-cdn.com/content/v1/5ee52f7d9edc8a7ee635591a/8df50655-6b68-460e-ad6c-5230001b9d5a/240404+-+063944+-+001.jpg",
+      image: "./assets/img/Polo_Pima.jpg",
       title: "What is Our Premium Collection?",
       description: "We've been part of your lifestyle for more than 25 years, quietly delivering premium quality products from trusted manufacturers to families across our regions.\n\nFor us, our brand isn't just a name. It's a daily connection between our artisans and your family. A commitment to bring fresh, natural products just the way it's meant to be. No shortcuts. No additives. Just honest, wholesome quality straight from our producers' hands to your home.",
       features: ["Handpicked Selection", "Quality Assured", "Sustainably Sourced"]
     },
     {
       id: 2,
-      image: "https://img.freepik.com/premium-photo/city-skyline-against-cloudy-sky_1048944-28506632.jpg?semt=ais_hybrid&w=740&q=80",
+      image: "./assets/img/Henly_Pima.jpg",
       title: "Experience True Craftsmanship",
       description: "Every product in our collection represents years of expertise and dedication to perfection. From sourcing to delivery, we maintain the highest standards.\n\nOur team works tirelessly to ensure that each item meets our rigorous quality requirements. We believe in transparency, sustainability, and supporting local artisans who create exceptional products.",
       features: ["Latest Trends", "Designer Selection", "Timeless Classics"]
     },
     {
       id: 3,
-      image: "https://images.squarespace-cdn.com/content/v1/5ee52f7d9edc8a7ee635591a/8df50655-6b68-460e-ad6c-5230001b9d5a/240404+-+063944+-+001.jpg",
+      image: "./assets/img/Hi_Neck.jpg",
       title: "Your Trust is Our Priority",
       description: "Customer satisfaction is at the heart of everything we do. We pride ourselves on delivering not just products, but experiences that create lasting memories.\n\nWith fast delivery, easy returns, and round-the-clock support, we ensure your shopping journey is as smooth as possible. Because your happiness is our success.",
       features: ["Fast Delivery", "Easy Returns", "24/7 Support"]

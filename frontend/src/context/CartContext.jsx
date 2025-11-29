@@ -15,6 +15,14 @@ export const CartProvider = ({ children }) => {
       return [];
     }
   });
+  const [appliedCoupon, setAppliedCoupon] = useState(() => {
+    try {
+      const raw = localStorage.getItem("cart_coupon");
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(false);
 
   // Sync cart with backend when user logs in
@@ -30,6 +38,13 @@ export const CartProvider = ({ children }) => {
       localStorage.setItem("cart_items", JSON.stringify(items));
     } catch (e) {}
   }, [items]);
+
+  // Save coupon to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem("cart_coupon", JSON.stringify(appliedCoupon));
+    } catch (e) {}
+  }, [appliedCoupon]);
 
   const fetchCartFromBackend = async () => {
     try {
@@ -164,16 +179,40 @@ export const CartProvider = ({ children }) => {
   const getTotalItems = () =>
     items.reduce((sum, i) => sum + Number(i.quantity || 0), 0);
 
+  const getDiscountAmount = () => {
+    if (!appliedCoupon) return 0;
+    return appliedCoupon.discountAmount || 0;
+  };
+
+  const getFinalTotal = () => {
+    const subtotal = getTotalPrice();
+    const discount = getDiscountAmount();
+    return Math.max(0, subtotal - discount);
+  };
+
+  const applyCoupon = (couponData) => {
+    setAppliedCoupon(couponData);
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+  };
+
   return (
     <CartContext.Provider
       value={{
         items,
+        appliedCoupon,
         addToCart,
         removeFromCart,
         updateQuantity,
         clearCart,
         getTotalPrice,
         getTotalItems,
+        getDiscountAmount,
+        getFinalTotal,
+        applyCoupon,
+        removeCoupon,
         loading,
       }}
     >

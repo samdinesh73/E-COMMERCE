@@ -12,6 +12,7 @@ const wishlistRoutes = require("./routes/wishlistRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const variationRoutes = require("./routes/variationRoutes");
 const colorRoutes = require("./routes/colorRoutes");
+const couponRoutes = require("./routes/couponRoutes");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -40,6 +41,7 @@ app.use("/wishlist", wishlistRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/variations", variationRoutes);
 app.use("/colors", colorRoutes);
+app.use("/coupons", couponRoutes);
 
 // Health check
 app.get("/health", (req, res) => {
