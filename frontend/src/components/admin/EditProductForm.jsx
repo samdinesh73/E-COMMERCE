@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { productService, categoryService } from "../../services/api";
 import { getImageUrl } from "../../utils/imageHelper";
 import ProductImageManager from "./ProductImageManager";
-import { Loader, Plus, Trash2, X } from "lucide-react";
+import { Loader, Plus, Trash2, X, Upload, AlertCircle, Check } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Input, Select, Alert, AlertTitle, AlertDescription } from "../ui";
 import axios from "axios";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
@@ -292,263 +293,374 @@ export default function EditProductForm({ product, onSaved, onCancel }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl mx-auto bg-white p-6 rounded-lg shadow-card">
-      <h3 className="text-2xl font-semibold mb-4">Edit Product</h3>
-
-      {msg && (
-        <div className={`mb-4 p-3 rounded ${msg.type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
-          {msg.text}
-        </div>
-      )}
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">Name</label>
-        <input name="name" value={form.name} onChange={handleChange} className="w-full border border-gray-300 rounded px-3 py-2" />
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">Price (INR)</label>
-        <input name="price" value={form.price} onChange={handleChange} type="number" step="0.01" className="w-full border border-gray-300 rounded px-3 py-2" />
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">Category</label>
-        {categoriesLoading ? (
-          <div className="flex items-center gap-2 text-gray-600">
-            <Loader className="h-4 w-4 animate-spin" />
-            Loading categories...
-          </div>
-        ) : (
-          <select
-            name="category_id"
-            value={form.category_id}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          >
-            <option value="">Select a category (optional)</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">Description</label>
-        <textarea name="description" value={form.description} onChange={handleChange} rows={3} className="w-full border border-gray-300 rounded px-3 py-2" />
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">Change Image (Optional)</label>
-        <div className="mb-3">
-          <p className="text-xs text-gray-600 mb-2">Current Image:</p>
-          <img 
-            src={getImageUrl(currentImage)} 
-            alt={form.name}
-            className="w-full h-48 object-cover rounded border border-gray-300 bg-gray-100"
-            onError={(e) => e.target.src = "https://via.placeholder.com/400x300?text=No+Image"}
-          />
-        </div>
-        <input type="file" accept="image/*" onChange={handleFileChange} className="w-full border border-gray-300 rounded px-3 py-2" />
-        <p className="text-xs text-gray-500 mt-1">Leave empty to keep current image.</p>
-        {imageFile && (
-          <div className="mt-2">
-            <p className="text-xs text-green-600 font-semibold">✓ New image selected: {imageFile.name}</p>
-            <p className="text-xs text-gray-500">({(imageFile.size / 1024).toFixed(2)} KB)</p>
-          </div>
-        )}
-      </div>
-
-      {/* Product Images Manager */}
-      {form.id && (
-        <div className="mb-6" onClick={(e) => e.stopPropagation()}>
-          <ProductImageManager productId={form.id} />
-        </div>
-      )}
-
-      {/* Product Variations Section */}
-      {form.id && (
-        <div className="mb-6 p-4 bg-blue-50 rounded-lg border-2 border-blue-300">
-          <div className="flex justify-between items-center mb-4">
-            <h4 className="text-lg font-bold text-gray-900">👕 Product Variations</h4>
-            {!showAddVariation && (
-              <button
-                type="button"
-                onClick={() => setShowAddVariation(true)}
-                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center gap-1"
-              >
-                <Plus className="h-4 w-4" />
-                Add Variation
-              </button>
-            )}
-          </div>
-
-          {/* Add Variation Form */}
-          {showAddVariation && (
-            <div className="bg-white border border-gray-200 rounded p-4 mb-4">
-              <h5 className="font-semibold mb-3 text-gray-900">{editingVariationId ? "Edit Variation" : "Add New Variation"}</h5>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                <div>
-                  <label className="block text-xs font-semibold mb-1">Variation Type</label>
-                  <input
-                    type="text"
-                    value={newVariationType}
-                    onChange={(e) => setNewVariationType(e.target.value)}
-                    disabled={editingVariationId ? true : false}
-                    className={`w-full border border-gray-300 rounded px-2 py-2 text-sm ${editingVariationId ? "bg-gray-100 cursor-not-allowed" : ""}`}
-                    placeholder="Size, Weight, Color..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold mb-1">Value</label>
-                  <input
-                    type="text"
-                    value={newVariationValue}
-                    onChange={(e) => setNewVariationValue(e.target.value)}
-                    className="w-full border border-gray-300 rounded px-2 py-2 text-sm"
-                    placeholder="S, M, L, XL..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold mb-1">Price (₹)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={newVariationPrice}
-                    onChange={(e) => setNewVariationPrice(parseFloat(e.target.value) || 0)}
-                    className="w-full border border-gray-300 rounded px-2 py-2 text-sm"
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              <div className="mb-3">
-                <label className="block text-xs font-semibold mb-1">{editingVariationId ? "Add More Images" : "Images (Multiple)"}</label>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => {
-                    handleAddVariationImages(e.target.files);
-                    // Clear the input so users can select again if needed
-                    e.target.value = "";
-                  }}
-                  className="w-full border border-gray-300 rounded px-2 py-2 text-xs"
-                />
-                {editingVariationId && <p className="text-xs text-gray-500 mt-1">Upload new images to add them to this variation</p>}
-              </div>
-
-              {newVariationPreviews.length > 0 && (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
-                  {newVariationPreviews.map((preview, idx) => (
-                    <div key={idx} className="relative">
-                      <img src={preview} alt={`preview-${idx}`} className="h-16 w-16 object-cover rounded border border-gray-300" />
-                      <button
-                        type="button"
-                        onClick={() => removeNewVariationImage(idx)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 w-6 h-6 flex items-center justify-center"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleCreateVariation}
-                  disabled={loading}
-                  className="px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:bg-gray-400"
-                >
-                  {loading ? "Saving..." : editingVariationId ? "Update Variation" : "Create Variation"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancelEdit}
-                  className="px-3 py-2 border rounded text-sm hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-              </div>
+    <div className="w-full h-full overflow-y-auto bg-slate-50 p-4">
+      <Card className="shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg sticky top-0 z-10">
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <CardTitle className="flex items-center gap-2 text-white">
+                <Upload className="h-5 w-5" />
+                Edit Product
+              </CardTitle>
+              <CardDescription className="text-blue-100">
+                Update product details, images, and variations
+              </CardDescription>
             </div>
+            <button
+              onClick={onCancel}
+              className="text-white hover:bg-blue-500 rounded p-2"
+              title="Close"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </CardHeader>
+
+        <CardContent className="pt-6">
+          {msg && (
+            <Alert className={`mb-6 ${msg.type === "success" ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+              <AlertCircle className={`h-4 w-4 ${msg.type === "success" ? "text-green-600" : "text-red-600"}`} />
+              <AlertTitle className={msg.type === "success" ? "text-green-800" : "text-red-800"}>
+                {msg.type === "success" ? "Success" : "Error"}
+              </AlertTitle>
+              <AlertDescription className={msg.type === "success" ? "text-green-700" : "text-red-700"}>
+                {msg.text}
+              </AlertDescription>
+            </Alert>
           )}
 
-          {/* Existing Variations */}
-          {variations.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {variations.map((variation) => (
-                <div key={variation.id} className="bg-white border border-gray-200 rounded p-3">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="font-semibold text-gray-900">{variation.variation_value}</p>
-                      <p className="text-xs text-gray-600">{variation.variation_type}</p>
-                      <p className="text-xs text-gray-600">₹ {variation.price_adjustment}</p>
-                    </div>
-                    <div className="flex gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleEditVariation(variation)}
-                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                        title="Edit variation"
-                      >
-                        ✎
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteVariation(variation.id)}
-                        className="p-1 text-red-600 hover:bg-red-50 rounded"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Basic Info Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Basic Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                  <Input
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    placeholder="Product name"
+                  />
+                </div>
 
-                  {/* Variation Images */}
-                  {variation.images && variation.images.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-1">
-                      {variation.images.map((img) => (
-                        <div key={img.id} className="relative group">
-                          <img
-                            src={`${API_BASE_URL}/${img.image_path}`}
-                            alt="variation"
-                            className="w-full h-16 object-cover rounded border border-gray-200"
-                            onError={(e) => { e.target.style.display = "none"; }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteVariationImage(variation.id, img.id)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Base Price (INR)</label>
+                    <Input
+                      name="price"
+                      value={form.price}
+                      onChange={handleChange}
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    {categoriesLoading ? (
+                      <div className="flex items-center gap-2 text-gray-600 py-2">
+                        <Loader className="h-4 w-4 animate-spin" />
+                        <span className="text-sm">Loading...</span>
+                      </div>
+                    ) : (
+                      <Select value={form.category_id} onChange={handleChange} name="category_id">
+                        <option value="">Select category...</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    name="description"
+                    value={form.description}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Product description..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Image Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Product Image</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Current Image:</p>
+                  <img 
+                    src={getImageUrl(currentImage)} 
+                    alt={form.name}
+                    className="w-full h-32 object-cover rounded border border-gray-300 bg-gray-100"
+                    onError={(e) => e.target.src = "https://via.placeholder.com/400x300?text=No+Image"}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Change Image (Optional)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="w-full text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Leave empty to keep current image</p>
+                  {imageFile && (
+                    <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                      <Check className="h-3 w-3" />
+                      {imageFile.name} ({(imageFile.size / 1024).toFixed(2)} KB)
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Product Images Manager */}
+            {form.id && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Additional Images</CardTitle>
+                </CardHeader>
+                <CardContent onClick={(e) => e.stopPropagation()}>
+                  <ProductImageManager productId={form.id} />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Variations Card - Simplified */}
+            {form.id && (
+              <Card className="border-2 border-blue-300">
+                <CardHeader className="bg-blue-50">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      👕 Product Variations
+                    </CardTitle>
+                    {!showAddVariation && (
+                      <Button
+                        type="button"
+                        onClick={() => setShowAddVariation(true)}
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700 h-8 text-xs"
+                      >
+                        <Plus className="h-3 w-3" />
+                        Add
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+
+                <CardContent className="pt-4 space-y-3">
+                  {/* Add/Edit Variation Form */}
+                  {showAddVariation && (
+                    <Card className="border border-blue-200 bg-blue-50">
+                      <CardContent className="pt-4">
+                        <h5 className="font-semibold mb-3 text-sm text-gray-900">
+                          {editingVariationId ? "Edit Variation" : "Add New Variation"}
+                        </h5>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-700">Type</label>
+                            <Input
+                              type="text"
+                              value={newVariationType}
+                              onChange={(e) => setNewVariationType(e.target.value)}
+                              disabled={editingVariationId ? true : false}
+                              placeholder="Size, Color..."
+                              className="text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-700">Value</label>
+                            <Input
+                              type="text"
+                              value={newVariationValue}
+                              onChange={(e) => setNewVariationValue(e.target.value)}
+                              placeholder="S, M, L..."
+                              className="text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold mb-1 text-gray-700">Price (₹)</label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={newVariationPrice}
+                              onChange={(e) => setNewVariationPrice(parseFloat(e.target.value) || 0)}
+                              placeholder="0"
+                              className="text-xs"
+                            />
+                          </div>
                         </div>
+
+                        <div className="mb-3">
+                          <label className="block text-xs font-semibold mb-1 text-gray-700">
+                            {editingVariationId ? "Add More Images" : "Upload Images"}
+                          </label>
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={(e) => {
+                              handleAddVariationImages(e.target.files);
+                              e.target.value = "";
+                            }}
+                            className="w-full text-xs"
+                          />
+                        </div>
+
+                        {newVariationPreviews.length > 0 && (
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-1 mb-3">
+                            {newVariationPreviews.map((preview, idx) => (
+                              <div key={idx} className="relative">
+                                <img src={preview} alt={`preview-${idx}`} className="h-12 w-12 object-cover rounded border border-gray-300" />
+                                <button
+                                  type="button"
+                                  onClick={() => removeNewVariationImage(idx)}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 w-5 h-5 flex items-center justify-center"
+                                >
+                                  <X className="h-2.5 w-2.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            onClick={handleCreateVariation}
+                            disabled={loading}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 h-8 text-xs"
+                          >
+                            {loading ? "Saving..." : editingVariationId ? "Update" : "Create"}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleCancelEdit}
+                            size="sm"
+                            className="h-8 text-xs"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Existing Variations - Grid Layout */}
+                  {variations.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {variations.map((variation) => (
+                        <Card key={variation.id} className="border border-gray-200 p-3">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <p className="font-semibold text-sm text-gray-900">{variation.variation_value}</p>
+                              <p className="text-xs text-gray-600">{variation.variation_type}</p>
+                              <p className="text-xs font-medium text-blue-600">₹{variation.price_adjustment}</p>
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleEditVariation(variation)}
+                                className="p-1 text-blue-600 hover:bg-blue-50 rounded text-xs"
+                                title="Edit"
+                              >
+                                ✎
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteVariation(variation.id)}
+                                className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {variation.images && variation.images.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-0.5">
+                              {variation.images.map((img) => (
+                                <div key={img.id} className="relative group">
+                                  <img
+                                    src={`${API_BASE_URL}/${img.image_path}`}
+                                    alt="variation"
+                                    className="w-full h-12 object-cover rounded border border-gray-200 text-xs"
+                                    onError={(e) => { e.target.style.display = "none"; }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteVariationImage(variation.id, img.id)}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition w-4 h-4 flex items-center justify-center"
+                                  >
+                                    <X className="h-2 w-2" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-500">No images</p>
+                          )}
+                        </Card>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-gray-500">No images</p>
+                    <p className="text-xs text-gray-600 text-center py-2">
+                      No variations yet. Click "Add" to create one.
+                    </p>
                   )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-600">No variations yet. Click "Add Variation" to create one.</p>
-          )}
-        </div>
-      )}
+                </CardContent>
+              </Card>
+            )}
 
-      <div className="flex items-center gap-3">
-        <button type="submit" disabled={loading} className="px-4 py-2 bg-black text-white rounded">
-          {loading ? "Saving..." : "Save"}
-        </button>
-        <button type="button" onClick={onCancel} className="px-4 py-2 border rounded">Cancel</button>
-      </div>
-    </form>
+            {/* Action Buttons - Sticky at bottom */}
+            <div className="flex gap-3 sticky bottom-0 bg-white p-4 border-t border-gray-200 rounded-b-lg">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-black hover:bg-gray-800 h-9 text-sm"
+              >
+                {loading ? (
+                  <>
+                    <Loader className="h-4 w-4 animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                className="h-9 text-sm"
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

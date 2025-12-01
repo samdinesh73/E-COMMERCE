@@ -104,6 +104,7 @@ export default function ProductList({
     // Filter by multiple categories
     if (selectedCategories.length > 0) {
       filtered = filtered.filter((product) =>
+        selectedCategories.includes(product.category_name) || 
         selectedCategories.includes(product.category_id)
       );
     }

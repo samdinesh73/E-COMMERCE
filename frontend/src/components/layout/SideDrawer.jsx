@@ -130,38 +130,41 @@ export default function SideDrawer({ isOpen, onClose }) {
         </div>
 
         {/* Categories List or Color List */}
-        <div className="p-4 space-y-3">
+        <div className="p-4">
           {showColors ? (
             colorsLoading ? (
               <div className="text-center py-8 text-gray-500">Loading colors...</div>
             ) : colorList.length === 0 ? (
               <div className="text-center py-8 text-gray-500">No colors found</div>
             ) : (
-              colorList.map((c) => (
-                <button
-                  key={c.value}
-                  onClick={() => {
-                    // Navigate to shop with color query and close drawer
-                    navigate(`/shop?color=${encodeURIComponent(c.value)}`);
-                    onClose();
-                  }}
-                  className="group flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer w-full text-left"
-                >
-                  <div className="w-16 h-12 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
-                    {c.hex_code ? (
-                      <div className="w-full h-full" style={{ backgroundColor: c.hex_code }} />
-                    ) : (
-                      <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                        <span className="text-xs text-gray-600">No color</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-gray-900 truncate">{c.value}</h3>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-black transition-colors flex-shrink-0" />
-                </button>
-              ))
+              <div className="grid grid-cols-3 gap-4">
+                {colorList.map((c) => (
+                  <button
+                    key={c.value}
+                    onClick={() => {
+                      // Navigate to shop with color query and close drawer
+                      navigate(`/shop?color=${encodeURIComponent(c.value)}`);
+                      onClose();
+                    }}
+                    className="flex flex-col items-center gap-2 group"
+                  >
+                    {/* Color Circle */}
+                    <div className="w-16 h-16 rounded-full flex-shrink-0 bg-gray-100 overflow-hidden flex items-center justify-center border-2 border-gray-200 hover:border-gray-400 transition-all">
+                      {c.hex_code ? (
+                        <div className="w-full h-full" style={{ backgroundColor: c.hex_code }} />
+                      ) : (
+                        <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                          <span className="text-xs text-gray-600">N/A</span>
+                        </div>
+                      )}
+                    </div>
+                    {/* Color Name */}
+                    <span className="text-xs font-medium text-gray-700 text-center group-hover:text-black transition-colors truncate max-w-[60px]">
+                      {c.value}
+                    </span>
+                  </button>
+                ))}
+              </div>
             )
           ) : (
             loading ? (
@@ -169,41 +172,43 @@ export default function SideDrawer({ isOpen, onClose }) {
             ) : categories.length === 0 ? (
               <div className="text-center py-8 text-gray-500">No categories found</div>
             ) : (
-              categories.map((category) => (
-                <Link
-                  key={category.id}
-                  to={`/category/${category.slug || category.id}`}
-                  onClick={onClose}
-                  className="group flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                >
-                  {/* Category Image */}
-                  <div className="w-20 h-20 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
-                    <img
-                      src={category.image ? (category.image.startsWith("/") ? category.image : getBackendImageUrl(category.image)) : "assets/img/placeholder.jpg"}
-                      alt={category.name}
-                      className="w-full h-full object-cover object-bottom"
-                      onError={(e) => {
-                        e.currentTarget.src = "assets/img/placeholder.jpg";
-                      }}
-                    />
-                  </div>
+              <div className="space-y-3">
+                {categories.map((category) => (
+                  <Link
+                    key={category.id}
+                    to={`/category/${category.slug || category.id}`}
+                    onClick={onClose}
+                    className="group flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    {/* Category Image */}
+                    <div className="w-20 h-20 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
+                      <img
+                        src={category.image ? (category.image.startsWith("/") ? category.image : getBackendImageUrl(category.image)) : "assets/img/placeholder.jpg"}
+                        alt={category.name}
+                        className="w-full h-full object-cover object-bottom"
+                        onError={(e) => {
+                          e.currentTarget.src = "assets/img/placeholder.jpg";
+                        }}
+                      />
+                    </div>
 
-                  {/* Category Name & Arrow */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-gray-900 truncate">
-                      {category.name}
-                    </h3>
-                    {category.product_count && (
-                      <p className="text-xs text-gray-500">
-                        {category.product_count} products
-                      </p>
-                    )}
-                  </div>
+                    {/* Category Name & Arrow */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-bold text-gray-900 truncate">
+                        {category.name}
+                      </h3>
+                      {category.product_count && (
+                        <p className="text-xs text-gray-500">
+                          {category.product_count} products
+                        </p>
+                      )}
+                    </div>
 
-                  {/* Arrow Icon */}
-                  <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-black transition-colors flex-shrink-0" />
-                </Link>
-              ))
+                    {/* Arrow Icon */}
+                    <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-black transition-colors flex-shrink-0" />
+                  </Link>
+                ))}
+              </div>
             )
           )}
         </div>
