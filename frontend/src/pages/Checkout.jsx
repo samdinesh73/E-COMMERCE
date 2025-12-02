@@ -290,211 +290,412 @@ export default function Checkout() {
   };
 
   return (
-    <div className="container-app py-12">
-      <h1 className="text-3xl font-bold mb-6">Checkout</h1>
+    <div className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-white">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div className="container-app py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Secure Checkout</h1>
+          <button 
+            onClick={() => navigate('/cart')}
+            className="text-sm text-gray-600 hover:text-gray-900 underline"
+          >
+            ← Back to Cart
+          </button>
+        </div>
+      </div>
 
       {items.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-lg text-gray-600">Your cart is empty.</p>
+        <div className="text-center py-24 container-app">
+          <div className="inline-block">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Cart is Empty</h2>
+            <p className="text-gray-600 mb-6">Add items before checking out</p>
+            <button 
+              onClick={() => navigate('/shop')}
+              className="px-8 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-900 transition-colors"
+            >
+              Continue Shopping
+            </button>
+          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            {/* Guest / User Toggle */}
-            {!token && (
-              <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-                <label className="flex items-center gap-2">
-                  <input 
-                    type="checkbox" 
-                    checked={isGuest} 
-                    onChange={(e) => setIsGuest(e.target.checked)} 
-                  />
-                  <span className="text-sm font-medium">Continue as Guest</span>
-                </label>
-                <p className="text-xs text-gray-600 mt-2">
-                  {isGuest ? "No account needed" : "Sign in to track orders"}
-                </p>
-              </div>
-            )}
-
-            {/* Address selection logic */}
-            {token && addresses.length > 0 && !showAddressForm ? (
-              <form onSubmit={handleSubmit} className="mb-6 space-y-4">
-                <div>
-                  <h3 className="text-lg font-bold mb-4">Delivery Address</h3>
-                  <div className="grid grid-cols-1 gap-3">
-                    {addresses.map(addr => (
-                      <div
-                        key={addr.id}
-                        onClick={() => setSelectedAddressId(addr.id)}
-                        className={`relative border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                          selectedAddressId === addr.id
-                            ? 'border-black bg-gray-50'
-                            : 'border-gray-200 hover:border-gray-400'
-                        }`}
-                      >
-                        {/* Radio Button */}
-                        <div className="absolute top-4 right-4">
-                          <input 
-                            type="radio" 
-                            name="selectedAddress" 
-                            checked={selectedAddressId === addr.id} 
-                            onChange={() => setSelectedAddressId(addr.id)}
-                            className="w-5 h-5 accent-black cursor-pointer"
-                          />
-                        </div>
-
-                        {/* Default Badge */}
-                        {addr.is_default && (
-                          <span className="inline-block px-2 py-1 bg-black text-white rounded text-xs font-semibold mb-2">DEFAULT</span>
-                        )}
-
-                        {/* Address Content */}
-                        <div className="pr-8">
-                          <p className="font-bold text-gray-900">{user?.name}</p>
-                          <p className="text-sm text-gray-600 mt-1">{addr.address_line}</p>
-                          <p className="text-sm text-gray-600">{addr.city}, {addr.state} {addr.pincode}</p>
-                          <p className="text-sm text-gray-600">{addr.country}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <button 
-                  type="button" 
-                  onClick={() => setShowAddressForm(true)}
-                  className="w-full border-2 border-gray-300 rounded-lg py-2 px-4 text-gray-700 font-semibold hover:bg-gray-50 transition-colors mt-4"
-                >
-                  + Add New Address
-                </button>
-
-                {/* Manual entry for name, email, phone */}
-                <div>
-                  <label className="block text-sm font-medium mb-1">Full Name</label>
-                  <input name="name" value={form.name} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Email</label>
-                  <input 
-                    type="email" 
-                    name="email" 
-                    value={form.email || ""} 
-                    onChange={handleChange} 
-                    className="w-full border px-3 py-2 rounded" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Phone</label>
-                  <input name="phone" value={form.phone} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
-                </div>
-
-                <div className="mt-4">
-                  <h3 className="font-semibold mb-2">Payment Method</h3>
-                  <label className="flex items-center gap-2">
-                    <input type="radio" name="method" checked={method === "razorpay"} onChange={() => setMethod("razorpay")} /> Razorpay
+        <div className="container-app py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Guest / User Toggle */}
+              {!token && (
+                <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={isGuest} 
+                      onChange={(e) => setIsGuest(e.target.checked)}
+                      className="w-5 h-5 accent-black rounded cursor-pointer"
+                    />
+                    <span className="text-sm font-semibold text-gray-900">Continue as Guest</span>
                   </label>
-                  <label className="flex items-center gap-2 mt-2">
-                    <input type="radio" name="method" checked={method === "cod"} onChange={() => setMethod("cod")} /> Cash on Delivery
-                  </label>
-                </div>
-
-                <div className="mt-6 flex gap-4">
-                  <button type="submit" disabled={loading || !selectedAddressId} className="px-6 py-3 bg-black text-white rounded">
-                    {loading ? "Processing..." : `Pay ₹ ${total.toFixed(2)}`}
-                  </button>
-                  <button type="button" onClick={() => navigate(-1)} className="px-6 py-3 border rounded">Back</button>
-                </div>
-              </form>
-            ) : null}
-
-            {/* Address form (shown if no addresses or adding new) */}
-            {(!token || addresses.length === 0 || showAddressForm) && (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Full Name</label>
-                  <input name="name" value={form.name} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Email</label>
-                  <input 
-                    type="email" 
-                    name="email" 
-                    value={form.email || ""} 
-                    onChange={handleChange} 
-                    className="w-full border px-3 py-2 rounded" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Phone</label>
-                  <input name="phone" value={form.phone} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Address</label>
-                  <textarea name="address" value={form.address} onChange={handleChange} className="w-full border px-3 py-2 rounded" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <input name="city" value={form.city} onChange={handleChange} placeholder="City" className="w-full border px-3 py-2 rounded" />
-                  <input name="pincode" value={form.pincode} onChange={handleChange} placeholder="Pincode" className="w-full border px-3 py-2 rounded" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <input name="state" value={form.state} onChange={handleChange} placeholder="State" className="w-full border px-3 py-2 rounded" />
-                  <input name="country" value={form.country} onChange={handleChange} placeholder="Country" className="w-full border px-3 py-2 rounded" />
-                </div>
-
-                <div className="mt-4">
-                  <h3 className="font-semibold mb-2">Payment Method</h3>
-                  <label className="flex items-center gap-2">
-                    <input type="radio" name="method" checked={method === "razorpay"} onChange={() => setMethod("razorpay")} /> Razorpay
-                  </label>
-                  <label className="flex items-center gap-2 mt-2">
-                    <input type="radio" name="method" checked={method === "cod"} onChange={() => setMethod("cod")} /> Cash on Delivery
-                  </label>
-                </div>
-
-                <div className="mt-6 flex gap-4">
-                  <button type="submit" disabled={loading} className="px-6 py-3 bg-black text-white rounded">
-                    {loading ? "Processing..." : `Pay ₹ ${total.toFixed(2)}`}
-                  </button>
-                  <button type="button" onClick={() => navigate(-1)} className="px-6 py-3 border rounded">Back</button>
-                </div>
-              </form>
-            )}
-          </div>
-
-          <aside className="p-4 border rounded">
-            <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
-            <div className="space-y-3">
-              {items.map((it) => (
-                <div key={it.id} className="flex items-center gap-3">
-                  <img src={getImageUrl(it.image)} alt={it.name} className="w-16 h-16 object-cover rounded" />
-                  <div className="flex-1">
-                    <div className="font-semibold">{it.name}</div>
-                    <div className="text-sm text-gray-600">Qty: {it.quantity}</div>
-                  </div>
-                  <div>₹ {(Number(it.price) * Number(it.quantity)).toFixed(2)}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 border-t pt-4 space-y-3">
-              <div className="flex justify-between">
-                <span>Subtotal ({items.length} items)</span>
-                <span>₹ {subtotal.toFixed(2)}</span>
-              </div>
-              {discount > 0 && (
-                <div className="flex justify-between text-green-600 font-medium bg-green-50 p-2 rounded">
-                  <span>Discount ({appliedCoupon?.coupon?.code})</span>
-                  <span>-₹ {discount.toFixed(2)}</span>
+                  <p className="text-xs text-gray-600 mt-2 ml-8">
+                    {isGuest ? "✓ Fast checkout without registration" : "Sign in to save addresses & track orders"}
+                  </p>
                 </div>
               )}
-              <div className="flex justify-between font-bold text-lg border-t pt-3">
-                <span>Total Amount</span>
-                <span>₹ {total.toFixed(2)}</span>
+
+              {/* Address selection logic */}
+              {token && addresses.length > 0 && !showAddressForm ? (
+                <form onSubmit={handleSubmit} className="space-y-6 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                  {/* Step 1: Delivery Address */}
+                  <div>
+                    <div className="flex items-center gap-3 mb-5">
+                      <span className="w-8 h-8 flex items-center justify-center bg-black text-white rounded-full text-sm font-bold">1</span>
+                      <h3 className="text-lg font-bold text-gray-900">Delivery Address</h3>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      {addresses.map(addr => (
+                        <div
+                          key={addr.id}
+                          onClick={() => setSelectedAddressId(addr.id)}
+                          className={`relative border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 ${
+                            selectedAddressId === addr.id
+                              ? 'border-black bg-black/3 shadow-md'
+                              : 'border-gray-200 hover:border-gray-400 bg-white'
+                          }`}
+                        >
+                          {/* Radio Button */}
+                          <div className="absolute top-4 right-4">
+                            <input 
+                              type="radio" 
+                              name="selectedAddress" 
+                              checked={selectedAddressId === addr.id} 
+                              onChange={() => setSelectedAddressId(addr.id)}
+                              className="w-5 h-5 accent-black cursor-pointer"
+                            />
+                          </div>
+
+                          {/* Default Badge */}
+                          {addr.is_default && (
+                            <span className="inline-block px-3 py-1 bg-black text-white rounded-full text-xs font-bold mb-3 uppercase tracking-wide">Default</span>
+                          )}
+
+                          {/* Address Content */}
+                          <div className="pr-10">
+                            <p className="font-bold text-gray-900">{user?.name}</p>
+                            <p className="text-sm text-gray-700 mt-2">{addr.address_line}</p>
+                            <p className="text-sm text-gray-600">{addr.city}, {addr.state} {addr.pincode}</p>
+                            <p className="text-xs text-gray-500">{addr.country}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button 
+                    type="button" 
+                    onClick={() => setShowAddressForm(true)}
+                    className="w-full border-2 border-gray-300 rounded-lg py-3 px-4 text-gray-900 font-semibold hover:bg-gray-50 transition-colors duration-200"
+                  >
+                    + Add New Address
+                  </button>
+
+                  {/* Step 2: Contact Information */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <div className="flex items-center gap-3 mb-5">
+                      <span className="w-8 h-8 flex items-center justify-center bg-black text-white rounded-full text-sm font-bold">2</span>
+                      <h3 className="text-lg font-bold text-gray-900">Contact Information</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2">Full Name</label>
+                        <input 
+                          name="name" 
+                          value={form.name} 
+                          onChange={handleChange} 
+                          className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
+                          placeholder="John Doe"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2">Email</label>
+                        <input 
+                          type="email" 
+                          name="email" 
+                          value={form.email || ""} 
+                          onChange={handleChange} 
+                          className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
+                          placeholder="john@example.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2">Phone</label>
+                        <input 
+                          name="phone" 
+                          value={form.phone} 
+                          onChange={handleChange} 
+                          className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
+                          placeholder="+91 00000 00000"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Step 3: Payment Method */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <div className="flex items-center gap-3 mb-5">
+                      <span className="w-8 h-8 flex items-center justify-center bg-black text-white rounded-full text-sm font-bold">3</span>
+                      <h3 className="text-lg font-bold text-gray-900">Payment Method</h3>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-200" 
+                        style={{borderColor: method === "razorpay" ? '#000' : '#e5e7eb', backgroundColor: method === "razorpay" ? '#f3f4f6' : '#fff'}}>
+                        <input 
+                          type="radio" 
+                          name="method" 
+                          checked={method === "razorpay"} 
+                          onChange={() => setMethod("razorpay")}
+                          className="w-5 h-5 accent-black cursor-pointer"
+                        />
+                        <span className="ml-3 font-semibold text-gray-900">💳 Credit/Debit Card</span>
+                      </label>
+                      <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-200" 
+                        style={{borderColor: method === "cod" ? '#000' : '#e5e7eb', backgroundColor: method === "cod" ? '#f3f4f6' : '#fff'}}>
+                        <input 
+                          type="radio" 
+                          name="method" 
+                          checked={method === "cod"} 
+                          onChange={() => setMethod("cod")}
+                          className="w-5 h-5 accent-black cursor-pointer"
+                        />
+                        <span className="ml-3 font-semibold text-gray-900">🚚 Cash on Delivery</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="border-t border-gray-200 pt-6 flex gap-4">
+                    <button 
+                      type="submit" 
+                      disabled={loading || !selectedAddressId} 
+                      className="flex-1 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                    >
+                      {loading ? "Processing..." : `Place Order • ₹${total.toFixed(2)}`}
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => navigate('/cart')} 
+                      className="px-6 py-3 border border-gray-300 text-gray-900 rounded-lg font-semibold hover:bg-gray-50 transition-colors duration-200"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </form>
+              ) : null}
+
+              {/* Address form (shown if no addresses or adding new) */}
+              {(!token || addresses.length === 0 || showAddressForm) && (
+                <form onSubmit={handleSubmit} className="space-y-6 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                  {/* Delivery Address Section */}
+                  <div>
+                    <div className="flex items-center gap-3 mb-5">
+                      <span className="w-8 h-8 flex items-center justify-center bg-black text-white rounded-full text-sm font-bold">1</span>
+                      <h3 className="text-lg font-bold text-gray-900">Delivery Address</h3>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2">Full Name</label>
+                        <input 
+                          name="name" 
+                          value={form.name} 
+                          onChange={handleChange} 
+                          className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
+                          placeholder="John Doe"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-900 mb-2">Email</label>
+                          <input 
+                            type="email" 
+                            name="email" 
+                            value={form.email || ""} 
+                            onChange={handleChange} 
+                            className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
+                            placeholder="john@example.com"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-900 mb-2">Phone</label>
+                          <input 
+                            name="phone" 
+                            value={form.phone} 
+                            onChange={handleChange} 
+                            className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
+                            placeholder="+91 00000 00000"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2">Street Address</label>
+                        <textarea 
+                          name="address" 
+                          value={form.address} 
+                          onChange={handleChange} 
+                          className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
+                          placeholder="Enter street address, apartment, etc."
+                          rows="3"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-900 mb-2">City</label>
+                          <input 
+                            name="city" 
+                            value={form.city} 
+                            onChange={handleChange} 
+                            className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
+                            placeholder="City"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-900 mb-2">Pincode</label>
+                          <input 
+                            name="pincode" 
+                            value={form.pincode} 
+                            onChange={handleChange} 
+                            className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
+                            placeholder="600000"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-900 mb-2">State</label>
+                          <input 
+                            name="state" 
+                            value={form.state} 
+                            onChange={handleChange} 
+                            className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
+                            placeholder="State"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-900 mb-2">Country</label>
+                          <input 
+                            name="country" 
+                            value={form.country} 
+                            onChange={handleChange} 
+                            className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20 transition-all"
+                            placeholder="Country"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payment Method Section */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <div className="flex items-center gap-3 mb-5">
+                      <span className="w-8 h-8 flex items-center justify-center bg-black text-white rounded-full text-sm font-bold">2</span>
+                      <h3 className="text-lg font-bold text-gray-900">Payment Method</h3>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-200" 
+                        style={{borderColor: method === "razorpay" ? '#000' : '#e5e7eb', backgroundColor: method === "razorpay" ? '#f3f4f6' : '#fff'}}>
+                        <input 
+                          type="radio" 
+                          name="method" 
+                          checked={method === "razorpay"} 
+                          onChange={() => setMethod("razorpay")}
+                          className="w-5 h-5 accent-black cursor-pointer"
+                        />
+                        <span className="ml-3 font-semibold text-gray-900">💳 Credit/Debit Card</span>
+                      </label>
+                      <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-200" 
+                        style={{borderColor: method === "cod" ? '#000' : '#e5e7eb', backgroundColor: method === "cod" ? '#f3f4f6' : '#fff'}}>
+                        <input 
+                          type="radio" 
+                          name="method" 
+                          checked={method === "cod"} 
+                          onChange={() => setMethod("cod")}
+                          className="w-5 h-5 accent-black cursor-pointer"
+                        />
+                        <span className="ml-3 font-semibold text-gray-900">🚚 Cash on Delivery</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="border-t border-gray-200 pt-6 flex gap-4">
+                    <button 
+                      type="submit" 
+                      disabled={loading} 
+                      className="flex-1 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                    >
+                      {loading ? "Processing..." : `Place Order • ₹${total.toFixed(2)}`}
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => showAddressForm ? setShowAddressForm(false) : navigate('/cart')} 
+                      className="px-6 py-3 border border-gray-300 text-gray-900 rounded-lg font-semibold hover:bg-gray-50 transition-colors duration-200"
+                    >
+                      {showAddressForm ? "Cancel" : "Back"}
+                    </button>
+                  </div>
+                </form>
+              )}
+          </div>
+
+            {/* Order Summary Sidebar */}
+            <aside className="lg:col-span-1">
+              <div className="sticky top-24 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 mb-6">Order Summary</h3>
+                
+                {/* Items List */}
+                <div className="space-y-4 mb-6 max-h-96 overflow-y-auto border-b border-gray-200 pb-6">
+                  {items.map((it) => (
+                    <div key={it.id} className="flex items-start gap-4">
+                      <img 
+                        src={getImageUrl(it.image)} 
+                        alt={it.name} 
+                        className="w-16 h-16 object-cover rounded-lg flex-shrink-0 bg-gray-100" 
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-gray-900 text-sm line-clamp-2">{it.name}</div>
+                        <div className="text-xs text-gray-600 mt-1">Qty: <span className="font-medium">{it.quantity}</span></div>
+                        <div className="text-sm font-bold text-gray-900 mt-2">₹{(Number(it.price) * Number(it.quantity)).toFixed(2)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Price Breakdown */}
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-700">Subtotal</span>
+                    <span className="font-semibold text-gray-900">₹{subtotal.toFixed(2)}</span>
+                  </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-sm bg-green-50 border border-green-200 p-3 rounded-lg">
+                      <span className="text-green-700 font-semibold">Discount ({appliedCoupon?.coupon?.code})</span>
+                      <span className="text-green-700 font-bold">-₹{discount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="border-t border-gray-200 pt-4">
+                    <div className="flex justify-between">
+                      <span className="text-gray-900 font-semibold">Total Amount</span>
+                      <span className="text-2xl font-bold text-black">₹{total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Security Badge */}
+                <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <p className="text-xs text-gray-600 flex items-start gap-2">
+                    <span className="text-base leading-none">🔒</span>
+                    <span>Secure payment with 256-bit encryption</span>
+                  </p>
+                </div>
               </div>
-            </div>
-          </aside>
+            </aside>
+          </div>
         </div>
       )}
     </div>

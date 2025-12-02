@@ -195,7 +195,7 @@ export default function ProductDetail() {
             <div className="">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-xs sm:text-sm font-semibold text-blue-600 mb-2">PRODUCT ID: {product.id}</p>
+                  <p className="text-xs font-semibold text-blue-600 mb-2">PRODUCT ID: {product.id}</p>
                   <h1 className="text-xl sm:text-xl lg:text-xl xl:text-xl font-semibold text-gray-900 break-words">{product.name}</h1>
                 </div>
               </div>
@@ -293,10 +293,10 @@ export default function ProductDetail() {
                                   <img
                                     src={`${API_BASE_URL}/${variation.images[0].image_path}`}
                                     alt={variation.variation_value}
-                                    className="h-24 sm:h-28 w-18 sm:w-18 rounded-lg object-cover border border-gray-300"
+                                    className="h-12 sm:h-14 w-12 sm:w-14 rounded-lg object-cover border border-gray-300"
                                   />
                                 ) : (
-                                  <div className="h-20 sm:h-24 w-20 sm:w-24 rounded-lg bg-gray-200 flex items-center justify-center border border-gray-300 text-xs font-semibold text-gray-600">
+                                  <div className="h-12 sm:h-14 w-12 sm:w-14 rounded-lg bg-gray-200 flex items-center justify-center border border-gray-300 text-xs font-semibold text-gray-600">
                                     {variation.variation_value}
                                   </div>
                                 )}

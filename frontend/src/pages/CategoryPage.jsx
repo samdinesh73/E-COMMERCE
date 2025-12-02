@@ -132,7 +132,7 @@ export default function CategoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -170,7 +170,7 @@ export default function CategoryPage() {
       </div>
 
       {/* Products */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-4">
         {allProducts.length === 0 ? (
           <div className="bg-white rounded-lg p-8 sm:p-12 text-center border border-gray-200">
             <p className="text-lg text-gray-600 mb-6">
@@ -186,7 +186,7 @@ export default function CategoryPage() {
         ) : (
           <>
             {/* Search and Filter Bar */}
-            <div className="bg-white border-b border-gray-200 sticky top-0 z-40 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 mb-6">
+            <div className="bg-white border-b border-gray-200 sticky  top-0 z-40 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 mb-6">
               <div className="flex items-center gap-3">
                 {/* Search Bar */}
                 <div className="flex-1 relative">
