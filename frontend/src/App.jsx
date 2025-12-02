@@ -23,6 +23,8 @@ import UserDetail from "./pages/admin/UserDetail";
 import HowToReturn from "./pages/HowToReturn";
 import TermsConditions from "./pages/TermsConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import AboutUs from "./pages/AboutUs";
+import ContactUs from "./pages/ContactUs";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 import { WishlistProvider } from "./context/WishlistContext";
@@ -107,6 +109,8 @@ function App() {
                   <Route path="/how-to-return" element={<HowToReturn />} />
                   <Route path="/terms-conditions" element={<TermsConditions />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/about-us" element={<AboutUs />} />
+                  <Route path="/contact-us" element={<ContactUs />} />
                 </Routes>
               </main>
               <Footer />

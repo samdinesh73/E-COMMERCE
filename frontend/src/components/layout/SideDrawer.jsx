@@ -157,7 +157,7 @@ export default function SideDrawer({ isOpen, onClose }) {
                           <span className="text-xs text-gray-600">N/A</span>
                         </div>
                       )}
-                    </div>
+                    </div> 
                     {/* Color Name */}
                     <span className="text-xs font-medium text-gray-700 text-center group-hover:text-black transition-colors truncate max-w-[60px]">
                       {c.value}

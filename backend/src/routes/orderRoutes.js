@@ -1,4 +1,5 @@
 const express = require("express");
+const axios = require("axios");
 const db = require("../config/database");
 const { verifyToken } = require("./authRoutes");
 const { sendOrderConfirmationEmail, sendAdminNewOrderEmail } = require("../utils/emailService");
@@ -23,6 +24,124 @@ const optionalAuth = (req, res, next) => {
   }
   next();
 };
+
+// Helper function to create Delhivery shipment
+async function createDelhiveryOrder(orderId, orderData, items) {
+  try {
+    const authToken = process.env.DELHIVERY_AUTH_TOKEN;
+    const apiUrl = process.env.DELHIVERY_API_URL;
+
+    if (!authToken || !apiUrl) {
+      console.warn("⚠️  Delhivery credentials not configured. Skipping shipment creation.");
+      return null;
+    }
+
+    // Build products description
+    const productsDesc = items.map(item => `${item.product_name || item.name || "Product"}`).join(", ");
+
+    // Calculate total weight
+    const weight = items.reduce((sum, item) => sum + (item.quantity || 1), 0) * 0.5;
+    const totalAmount = items.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0);
+
+    // Determine payment mode and COD amount
+    const isCOD = orderData.paymentMethod?.toLowerCase() === "cod" || orderData.paymentMethod?.toLowerCase() === "cash on delivery";
+    const paymentMode = isCOD ? "COD" : "Prepaid";
+    const codAmount = isCOD ? String(Math.max(0, totalAmount)) : "";
+
+    // Prepare payload - Match Delhivery sample format EXACTLY
+    const shipmentData = {
+      shipments: [
+        {
+          name: (orderData.customerName || orderData.guest_name || "Consignee").substring(0, 50),
+          add: (orderData.shippingAddress || "Address").substring(0, 100),
+          pin: String(orderData.pincode || "600001"),
+          city: (orderData.city || "Denkanikottai").substring(0, 50),
+          state: (orderData.state || "Denkanikottai").substring(0, 50),
+          country: "India",
+          phone: String(orderData.phone || "9876543210"),
+          order: `ORDER-${orderId}`,
+          payment_mode: paymentMode,
+          return_pin: String(process.env.STORE_PINCODE || "600001"),
+          return_city: (process.env.STORE_CITY || "Denkanikottai").substring(0, 50),
+          return_phone: String(process.env.STORE_PHONE || "9876543210"),
+          return_add: (process.env.STORE_ADDRESS || "Store Address").substring(0, 100),
+          return_state: (process.env.STORE_STATE || "Denkanikottai").substring(0, 50),
+          return_country: "India",
+          products_desc: (productsDesc || "Product").substring(0, 200),
+          hsn_code: "",
+          cod_amount: codAmount,
+          order_date: null,
+          total_amount: String(Math.max(0, totalAmount)),
+          seller_add: (process.env.STORE_ADDRESS || "Store Address").substring(0, 100),
+          seller_name: (process.env.STORE_NAME || "Store").substring(0, 50),
+          seller_inv: `INV-${orderId}`,
+          quantity: String(items.reduce((sum, item) => sum + (item.quantity || 1), 0)),
+          waybill: "",
+          shipment_width: "100",
+          shipment_height: "100",
+          weight: String(Math.max(0.5, weight)),
+          shipping_mode: "Surface",
+          address_type: "Home"
+        }
+      ],
+      pickup_location: {
+        name: "IIKOSA COSMETICS PVT LTD"
+      }
+    };
+
+    console.log("📦 Creating Delhivery order for ORDER-" + orderId);
+    console.log("👤 Customer: " + shipmentData.shipments[0].name);
+    console.log("📍 Delivery: " + shipmentData.shipments[0].add + ", " + shipmentData.shipments[0].city + " - " + shipmentData.shipments[0].pin);
+    console.log("💳 Payment Mode: " + paymentMode + (isCOD ? ` (COD Amount: ₹${totalAmount})` : ""));
+    console.log("📦 Weight: " + weight + "kg, Total: ₹" + totalAmount);
+    console.log("📤 Sending payload to Delhivery...");
+
+    // Send to Delhivery API
+    const response = await axios.post(
+      apiUrl,
+      `format=json&data=${JSON.stringify(shipmentData)}`,
+      {
+        headers: {
+          Authorization: `Token ${authToken}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Delhivery Response received");
+    console.log("   Status:", response.data.success ? "SUCCESS" : "FAILED");
+    console.log("   Packages:", response.data.package_count);
+    console.log("   Upload WBN:", response.data.upload_wbn);
+
+    // Check if successful and has waybill
+    if (response.data.packages?.length > 0) {
+      const pkg = response.data.packages[0];
+      
+      if (pkg.status === 'Success' || pkg.waybill) {
+        console.log(`✅ Delhivery shipment created! Waybill: ${pkg.waybill}`);
+        return { waybill: pkg.waybill, trackingUrl: `https://track.delhivery.com/#/tracking/${pkg.waybill}` };
+      }
+      
+      if (pkg.status === 'Fail') {
+        console.warn(`❌ Shipment failed - Status: Fail`);
+        console.warn(`   Serviceable: ${pkg.serviceable}`);
+        console.warn(`   Remarks:`, pkg.remarks || []);
+        console.warn("   Action: Try with a different pincode or contact Delhivery support");
+      }
+    }
+
+    console.warn("⚠️  No waybill in response");
+    if (response.data.rmk) console.warn("   Message:", response.data.rmk);
+    return null;
+  } catch (error) {
+    console.error("❌ Error creating Delhivery order:", error.message);
+    if (error.response?.data) {
+      console.error("   Response:", error.response.data);
+    }
+    return null;
+  }
+}
 
 // Create order (supports both authenticated and guest checkout)
 router.post("/", optionalAuth, async (req, res) => {
@@ -83,6 +202,7 @@ router.post("/", optionalAuth, async (req, res) => {
         pincode,
         paymentMethod: payment_method,
         phone,
+        state: "Haryana"
       };
 
       // Send to customer
@@ -90,6 +210,9 @@ router.post("/", optionalAuth, async (req, res) => {
 
       // Send to admin
       sendAdminNewOrderEmail(orderData).catch(err => console.error("Failed to send admin email:", err));
+
+      // Create Delhivery shipment (async, non-blocking)
+      const delhiveryResult = await createDelhiveryOrder(orderId, orderData, items || []);
 
       return res.status(201).json({
         id: orderId,
@@ -102,7 +225,9 @@ router.post("/", optionalAuth, async (req, res) => {
         payment_method,
         status: "pending",
         created_at: new Date().toISOString(),
-        table: "login_orders"
+        table: "login_orders",
+        waybill: delhiveryResult?.waybill || null,
+        trackingUrl: delhiveryResult?.trackingUrl || null
       });
     } else {
       // Guest user - save to orders
@@ -152,6 +277,7 @@ router.post("/", optionalAuth, async (req, res) => {
         pincode,
         paymentMethod: payment_method,
         phone,
+        state: "Haryana"
       };
 
       // Send to customer
@@ -159,6 +285,9 @@ router.post("/", optionalAuth, async (req, res) => {
 
       // Send to admin
       sendAdminNewOrderEmail(orderData).catch(err => console.error("Failed to send admin email:", err));
+
+      // Create Delhivery shipment (async, non-blocking)
+      const delhiveryResult = await createDelhiveryOrder(orderId, orderData, items || []);
 
       return res.status(201).json({
         id: orderId,
@@ -168,7 +297,9 @@ router.post("/", optionalAuth, async (req, res) => {
         payment_method,
         status: "pending",
         created_at: new Date().toISOString(),
-        table: "orders"
+        table: "orders",
+        waybill: delhiveryResult?.waybill || null,
+        trackingUrl: delhiveryResult?.trackingUrl || null
       });
     }
   } catch (err) {

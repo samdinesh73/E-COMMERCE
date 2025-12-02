@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import ProductList from "../components/sections/ProductList";
 import ShopFilters from "../components/common/ShopFilters";
 import { Search, Filter, X, Eye, ShoppingBag, Heart, Home, Zap, Users, Sparkles, Watch, Gift, Snowflake, Flower2, Headphones, Lamp, Shirt, Pocket, Package, Briefcase, Wind } from "lucide-react";
@@ -21,6 +22,7 @@ const categoryIcons = {
 };
 
 export default function Shop() {
+  const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -76,20 +78,25 @@ export default function Shop() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Handle color filter from URL (runs when URL changes)
   useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const colorParam = params.get("color");
-      if (colorParam) {
-        const values = colorParam.split(",").map((v) => v.trim()).filter(Boolean);
-        if (values.length > 0) {
-          setSelectedVariations((prev) => ({ ...prev, color: values }));
-        }
+    const colorParam = searchParams.get("color");
+    
+    if (colorParam) {
+      const values = colorParam.split(",").map((v) => v.trim()).filter(Boolean);
+      if (values.length > 0) {
+        console.log("Setting color filter:", values);
+        setSelectedVariations((prev) => ({ ...prev, color: values }));
       }
-    } catch (e) {
-      // ignore
+    } else {
+      // Clear color filter if no color param
+      setSelectedVariations((prev) => {
+        const updated = { ...prev };
+        delete updated.color;
+        return updated;
+      });
     }
-  }, []);
+  }, [searchParams]);
 
   const handleCategoryClick = (categoryId, categoryName) => {
     setSelectedCategoryId(categoryId);

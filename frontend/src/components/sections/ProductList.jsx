@@ -68,15 +68,23 @@ export default function ProductList({
 
     const variations = productVariations[productId] || [];
     
-    // Check if product has any of the selected variations
+    // For each variation filter type, check if product has at least one matching variation
     for (const [variationType, selectedValues] of Object.entries(selectedVariations)) {
-      const hasMatchingVariation = variations.some(
-        (variation) =>
-          (variation.variation_type || '').toLowerCase() === String(variationType).toLowerCase() &&
-          selectedValues.includes(variation.variation_value)
-      );
+      const variationTypeStr = String(variationType).toLowerCase();
       
-      if (!hasMatchingVariation) return false;
+      // Find if any variation of this type matches any of the selected values
+      const hasMatchingVariation = variations.some((variation) => {
+        const varType = (variation.variation_type || '').toLowerCase();
+        const varValue = (variation.variation_value || '').toLowerCase().trim();
+        const selectedValuesLower = selectedValues.map(v => String(v).toLowerCase().trim());
+        
+        return varType === variationTypeStr && selectedValuesLower.includes(varValue);
+      });
+      
+      // If this variation type filter exists but no product has it, exclude product
+      if (!hasMatchingVariation) {
+        return false;
+      }
     }
     
     return true;

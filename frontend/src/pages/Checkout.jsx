@@ -320,24 +320,54 @@ export default function Checkout() {
             {/* Address selection logic */}
             {token && addresses.length > 0 && !showAddressForm ? (
               <form onSubmit={handleSubmit} className="mb-6 space-y-4">
-                <h3 className="font-semibold mb-2">Select Address</h3>
-                {addresses.map(addr => (
-                  <div
-                    key={addr.id}
-                    className={`border rounded p-4 mb-2 flex items-center justify-between cursor-pointer ${addr.is_default ? 'bg-green-50 border-green-400' : ''}`}
-                    onClick={() => setSelectedAddressId(addr.id)}
-                  >
-                    <div>
-                      {addr.is_default && <span className="px-2 py-1 bg-green-600 text-white rounded text-xs mr-2">DEFAULT</span>}
-                      <span className="font-bold">{user?.name}</span>
-                      <div className="text-gray-700">{addr.address_line}, {addr.city}, {addr.state}, {addr.pincode}, {addr.country}</div>
-                    </div>
-                    <div onClick={e => e.stopPropagation()}>
-                      <input type="radio" name="selectedAddress" checked={selectedAddressId === addr.id} onChange={() => setSelectedAddressId(addr.id)} />
-                    </div>
+                <div>
+                  <h3 className="text-lg font-bold mb-4">Delivery Address</h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    {addresses.map(addr => (
+                      <div
+                        key={addr.id}
+                        onClick={() => setSelectedAddressId(addr.id)}
+                        className={`relative border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                          selectedAddressId === addr.id
+                            ? 'border-black bg-gray-50'
+                            : 'border-gray-200 hover:border-gray-400'
+                        }`}
+                      >
+                        {/* Radio Button */}
+                        <div className="absolute top-4 right-4">
+                          <input 
+                            type="radio" 
+                            name="selectedAddress" 
+                            checked={selectedAddressId === addr.id} 
+                            onChange={() => setSelectedAddressId(addr.id)}
+                            className="w-5 h-5 accent-black cursor-pointer"
+                          />
+                        </div>
+
+                        {/* Default Badge */}
+                        {addr.is_default && (
+                          <span className="inline-block px-2 py-1 bg-black text-white rounded text-xs font-semibold mb-2">DEFAULT</span>
+                        )}
+
+                        {/* Address Content */}
+                        <div className="pr-8">
+                          <p className="font-bold text-gray-900">{user?.name}</p>
+                          <p className="text-sm text-gray-600 mt-1">{addr.address_line}</p>
+                          <p className="text-sm text-gray-600">{addr.city}, {addr.state} {addr.pincode}</p>
+                          <p className="text-sm text-gray-600">{addr.country}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-                <button type="button" className="text-blue-700 mt-2" onClick={() => setShowAddressForm(true)}>Add new address</button>
+                </div>
+
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddressForm(true)}
+                  className="w-full border-2 border-gray-300 rounded-lg py-2 px-4 text-gray-700 font-semibold hover:bg-gray-50 transition-colors mt-4"
+                >
+                  + Add New Address
+                </button>
 
                 {/* Manual entry for name, email, phone */}
                 <div>

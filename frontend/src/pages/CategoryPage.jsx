@@ -4,7 +4,7 @@ import { categoryService } from "../services/api";
 import { getBackendImageUrl } from "../utils/imageHelper";
 import ProductCard from "../components/common/ProductCard";
 import ShopFilters from "../components/common/ShopFilters";
-import { Loader, AlertCircle, ArrowLeft, Search, Filter, X } from "lucide-react";
+import { Loader, AlertCircle, ArrowLeft, Search, Filter, X, Eye } from "lucide-react";
 
 export default function CategoryPage() {
   const { slug } = useParams();
@@ -19,6 +19,9 @@ export default function CategoryPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: 0, max: Infinity });
   const [selectedVariations, setSelectedVariations] = useState({});
+  const [viewMode, setViewMode] = useState("full");
+  const [gridLayout, setGridLayout] = useState("grid-cols-4");
+  const [mobileGridLayout, setMobileGridLayout] = useState("grid-cols-2");
 
   useEffect(() => {
     fetchCategoryProducts();
@@ -183,38 +186,53 @@ export default function CategoryPage() {
         ) : (
           <>
             {/* Search and Filter Bar */}
-            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between mb-6">
-              {/* Search Box */}
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-                />
+            <div className="bg-white border-b border-gray-200 sticky top-0 z-40 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 mb-6">
+              <div className="flex items-center gap-3">
+                {/* Search Bar */}
+                <div className="flex-1 relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder={`Search in ${category.name}...`}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent bg-gray-50"
+                  />
+                </div>
+
+                {/* Filter Button */}
+                <button
+                  onClick={() => setShowFilters(true)}
+                  className="p-2.5 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
+                  title="Filters"
+                >
+                  <Filter className="h-5 w-5 text-gray-600" />
+                </button>
+
+                {/* View Mode Button */}
+                <button
+                  onClick={() => setViewMode(viewMode === "full" ? "images-only" : "full")}
+                  className={`p-2.5 border rounded-full transition-colors ${
+                    viewMode === "images-only"
+                      ? "bg-blue-100 border-blue-300 text-blue-600"
+                      : "border-gray-300 hover:bg-gray-50 text-gray-600"
+                  }`}
+                  title="View mode"
+                >
+                  <Eye className="h-5 w-5" />
+                </button>
               </div>
 
-              {/* Filter Button */}
-              <button
-                onClick={() => setShowFilters(true)}
-                className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-gray-700 font-medium whitespace-nowrap"
-              >
-                <Filter className="h-5 w-5" />
-                Filters
-              </button>
-            </div>
-
-            {/* Showing Products Count */}
-            <div className="mb-6">
-              <p className="text-gray-700 font-medium">
-                Showing {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}
-              </p>
+              {/* Showing Products Count */}
+              <div className="mt-4">
+                <p className="text-sm text-gray-600">
+                  Showing {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}
+                </p>
+              </div>
             </div>
 
             {/* Products Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className={`grid ${mobileGridLayout} sm:grid-cols-2 lg:${gridLayout} gap-4 sm:gap-6`}>
               {filteredProducts.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <p className="text-lg text-gray-600">
@@ -223,7 +241,11 @@ export default function CategoryPage() {
                 </div>
               ) : (
                 filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard 
+                    key={product.id} 
+                    product={product}
+                    viewMode={viewMode}
+                  />
                 ))
               )}
             </div>

@@ -61,6 +61,20 @@ CREATE TABLE IF NOT EXISTS login_orders (
 -- Set AUTO_INCREMENT to start from 1000 for login_orders
 ALTER TABLE login_orders AUTO_INCREMENT = 1000;
 
+-- Create contact_messages table
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  subject VARCHAR(255) NOT NULL,
+  message LONGTEXT NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_email (email),
+  INDEX idx_created_at (created_at)
+);
+
 -- Sample products (optional - comment out if you already have products)
 -- INSERT INTO products (name, price, image, description) VALUES
 -- ('iPhone 15 Pro', 79999, '/uploads/iphone15.jpg', 'Latest Apple smartphone with advanced features'),
