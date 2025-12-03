@@ -43,8 +43,8 @@ export default function Footer() {
           <div>
             <h4 className="text-lg font-semibold mb-4">Contact Us</h4>
             <p className="text-gray-700 mb-3">
-              📧 support@fashionhub.com<br />
-              📞 +91 123-456-7890
+              📧 sdineshkumar2403@gmail.com<br />
+              📞 +91 7358961672
             </p>
             <Link to="/contact-us" className="inline-block px-4 py-2 border border-gray-900 rounded hover:bg-gray-900 hover:text-white transition-colors text-sm font-semibold">
               Get in Touch
@@ -53,7 +53,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-200 pt-6 text-center text-gray-600">
-          <p>&copy; 2025 FashionHub. All rights reserved. | Made with ❤️</p>
+          <p>&copy; @copywrite 2025 . All rights reserved. | Made with ❤️</p>
         </div>
       </div>
     </footer>

@@ -22,8 +22,8 @@ export default function HomePage() {
       <FeaturesSection/>
       <ParallaxScrollSection />
       <HoverCardSection />
-      <ProductSlider />
-      <RecentProducts />
+      {/* <ProductSlider /> */}
+      {/* <RecentProducts /> */}
 
       <CtaSection/>
       {/* <FeatureProduct/> */}

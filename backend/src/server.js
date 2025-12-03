@@ -34,6 +34,7 @@ app.use((req, res, next) => {
 // Routes
 app.use("/products", productRoutes);
 app.use("/payments", paymentRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/auth", authRoutes);
 app.use("/orders", orderRoutes);
 app.use("/users", userRoutes);
